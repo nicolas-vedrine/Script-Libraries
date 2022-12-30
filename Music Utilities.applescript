@@ -2060,7 +2060,7 @@ end spotlightTrack
 
 to spotlightQuery(thePath, theSpotlightQueryParams)
 	set theCommand to "mdfind -onlyin " & quoted form of thePath & ""
-	set theSpecialChars to {"_", "&", "'"}
+	set theSpecialChars to {"_", "&", "'", "$"}
 	repeat with theParam in theSpotlightQueryParams
 		set theParamName to name of theParam
 		set theParamValue to value of theParam
