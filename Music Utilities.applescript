@@ -713,11 +713,7 @@ to getFormatedTrackName(theTrack, theStyle)
 			set albumName to album of theTrack
 			--set str to (theID as string) & " - "
 			if theStyle is _formatedTrackNameTrackNameArtistNameAlbumName_ then
-				if (albumName = "") then
-					set str to str & ("\"" & trackName & "\"" & " by " & artistName & " in unknown album")
-				else
-					set str to str & ("\"" & trackName & "\"" & " by " & artistName & " in " & albumName)
-				end if
+				set str to str & ("'" & trackName & "'" & " by " & "'" & artistName & "'" & " in '" & my getFormattedAlbumName(albumName) & "'")
 			end if
 		on error
 			log "error with the method getFormatedTrackName()"
@@ -725,6 +721,14 @@ to getFormatedTrackName(theTrack, theStyle)
 	end tell
 	return str
 end getFormatedTrackName
+
+to getFormattedAlbumName(albumName)
+	if (albumName = "") then
+		return item 1 of my _albumNamePropertiesList_
+	else
+		return albumName
+	end if
+end getFormattedAlbumName
 
 on isInMusicBox(theTrack)
 	tell application "Music"
@@ -754,7 +758,7 @@ on checkIfDestinationHasEnoughSpace(theTracks, theDestination)
 	end tell
 end checkIfDestinationHasEnoughSpace
 
-on exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
+to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 	log "exportFileToSpecificFolder"
 	tell script "Finder Utilities"
 		--set theFolderName to my getiTunesFolderName(theFileTrack)
@@ -1757,7 +1761,7 @@ property _fixTrackLocationTrackNotFound_ : "3"
 
 to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	--display dialog "fixDeadTracks"
-	log "fixDeadTracks - thePrimaryPath = " & thePrimaryPath & " theSecondaryPath = " & theSecondaryPath & " theFindFolder = " & theFindFolder
+	log "fixDeadTracks : thePrimaryPath = " & thePrimaryPath & " theSecondaryPath = " & theSecondaryPath & " theFindFolder = " & theFindFolder
 	--set my _primaryPathToMusic_ to quoted form of POSIX path of (choose folder with prompt "Set the volume 1 to SEARCH")
 	set my _primaryPathToMusic_ to thePrimaryPath
 	--set my _secondaryPathToMusic_ to quoted form of POSIX path of (choose folder with prompt "Set the volume 2 to SEARCH")
@@ -1776,8 +1780,9 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 				set theReturnedList to my spotlightTrack(theTrack, thePath)
 				if (count of theReturnedList) = 0 then
 					set dialogResult to display dialog ¬
-						"Can't find the track " & my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & " in the path " & my _primaryPathToMusic_ & "." & ¬
-						"Search in second path " & my _secondaryPathToMusic_ & ¬
+						"Can't find the track " & my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & " in the path " & "'" & my _primaryPathToMusic_ & "'.
+" & ¬
+						"Search in second path " & "'" & my _secondaryPathToMusic_ & "' " & ¬
 						"?" buttons {"Cancel", "Continue", "OK"} ¬
 						default button "OK" cancel button "Cancel" with icon 1
 					if button returned of dialogResult is "OK" then
@@ -1785,34 +1790,19 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 						set theReturnedList to my spotlightTrack(theTrack, thePath)
 						-- search manually
 						if (count of theReturnedList) = 0 then
-							set dialogResult to display dialog ¬
-								"Can't find the track " & my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & " in the path " & my _secondaryPathToMusic_ & "." & ¬
-								"Search manually ?" buttons {"Cancel", "Continue", "OK"} ¬
-								default button "OK" cancel button "Cancel" with icon 1
-							if button returned of dialogResult is "OK" then
-								set theFile to choose file with prompt "Please choose a file:" of type _musicExtensions_ ¬
-									default location strPath
+							--display dialog my thePrimaryPathToMusic
+							--set thePosixPrimaryPathToMusic to POSIX file (thePrimaryPath)
+							set theFile to my chooseFileManually(theTrack, my _primaryPathToMusic_)
+							if theFile is not equal to "" then
 								tell script "Finder Utilities"
-									set theFileName to getFileName(theFile)
+									set thePath to getParentPath(theFile)
+									display dialog thePath
 								end tell
-								if theFileName does not contain name of theTrack then
-									set dialogResult to display dialog ¬
-										"The selected file : " & theFileName & " seems to not contains the tracks's name : " & name of theTrack & ".
-Are you sure ?" buttons {"Cancel", "No", "Yes"} ¬
-										default button "Yes" cancel button "Cancel" with icon 1
-									if button returned of dialogResult is "Yes" then
-										-- add in the list
-									end if
-								else
-									-- add in the list
-								end if
-								log POSIX path of theFile
+								copy theFile to the end of theReturnedList
 							end if
 						end if
 					end if
 				end if
-				
-				--return
 				
 				if (count of theReturnedList) is equal to 0 then
 					--display dialog "Track not found : " & my getFormatedTrackName(theTrack, _formatedTrackNameTrackNameArtistNameAlbumName_)
@@ -1902,18 +1892,6 @@ to testFixDeadTracks()
 	set theSecondaryPathToMusic to "/Volumes/music/Musique/"
 	set theFindFolder to "/Volumes/VOYAGEUR/iTunes/Find/"
 	
-	(*
-		set strPath to POSIX file thePrimaryPathToMusic
-		
-		set theFile to choose file with prompt "Please choose a file:" of type _musicExtensions_ ¬
-			default location strPath
-		tell script "Finder Utilities"
-			log getFileName(theFile)
-		end tell
-		log POSIX path of theFile
-		return theFile
-	*)
-	
 	set theResult to my fixDeadTracks(theTracks, thePrimaryPathToMusic, theSecondaryPathToMusic, theFindFolder)
 	set theReport to getListReport(itemsNotFound of theResult, my _formatedTrackNameTrackNameArtistNameAlbumName_)
 	set the clipboard to theReport
@@ -1923,18 +1901,38 @@ end testFixDeadTracks
 
 on run
 	
-	--my testFixDeadTracks()
+	(*
+		set my _primaryPathToMusic_ to "/Volumes/VOYAGEUR/iTunes/Musique/"
+		set thePosixPrimaryPathToMusic to POSIX file (my _primaryPathToMusic_)
+		set theTracks to getDialogTracksKind(false)
+		repeat with theTrack in theTracks
+			set theFile to my chooseFileManually(theTrack, thePosixPrimaryPathToMusic)
+		end repeat
+		
+		return
+	*)
 	
-	set theTracks to getDialogTracksKind(false)
-	set my _primaryPathToMusic_ to "/Volumes/VOYAGEUR/iTunes/Musique/"
-	set my _secondaryPathToMusic_ to "/Volumes/music/Musique/"
-	set thePath to POSIX file (my _primaryPathToMusic_)
-	repeat with theTrack in theTracks
-		display dialog my chooseFileManually(theTrack, thePath)
-	end repeat
+	
+	my testFixDeadTracks()
+	-- test
+	
+	(*
+		set theTracks to getDialogTracksKind(false)
+		set my _primaryPathToMusic_ to "/Volumes/VOYAGEUR/iTunes/Musique/"
+		set my _secondaryPathToMusic_ to "/Volumes/music/Musique/"
+		set thePath to POSIX file (my _primaryPathToMusic_)
+		repeat with theTrack in theTracks
+			set theFile to my chooseFileManually(theTrack, thePath)
+			display dialog theFile contains my _primaryPathToMusic_
+		end repeat
+	*)
 	
 	
 end run
+
+to copyFileTo(theTrack, theFound, theDestination)
+	
+end copyFileTo
 
 to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 	tell application "Music"
@@ -1947,11 +1945,10 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 				--display dialog "my _primaryPathToMusic_ --- " & my _primaryPathToMusic_
 				log "fixTrackLocation : thePath = " & thePath & " : " & "_primaryPathToMusic_ : " & my _primaryPathToMusic_ & " equal : " & (thePath is equal to my _primaryPathToMusic_)
 				if class of theFound is text then
-					if thePath is equal to my _primaryPathToMusic_ then
-						--display dialog "Music Utilities --- sjsjdjdjdjdjdjfjghghghg"
+					if thePath contains my _primaryPathToMusic_ then
 						set location of theTrack to theFound
 						my addTrackToPlaylist(theTrack, thePlaylist)
-					else if thePath is equal to my _secondaryPathToMusic_ then
+					else
 						log "fixTrackLocation export : theFound = " & theFound & " : " & "theDestination" & " = " & theDestination
 						set theCopiedFile to my exportFileToSpecificFolder(theFound, theDestination, true)
 						log "fixTrackLocation export : theCopiedFile = " & theCopiedFile & " --- " & class of theCopiedFile
@@ -1962,7 +1959,6 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 							on error
 								display dialog "fixTrackLocation export : problem with location = " & class of theCopiedFile
 							end try
-							
 						end if
 					end if
 					return my _fixTrackLocationTrackFound_
