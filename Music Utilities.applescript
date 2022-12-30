@@ -1769,8 +1769,10 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	set theItemFound to {}
 	set theItemNotFound to {}
 	set theItemAlreadyFound to {}
+	set yesRemember to false
 	set i to 0
 	repeat with theTrack in theTracks
+		set searchYes to false
 		my showProgress(i, length of theTracks, "", "")
 		
 		tell application "Music"
@@ -1779,29 +1781,39 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 				set thePath to my _primaryPathToMusic_
 				set theReturnedList to my spotlightTrack(theTrack, thePath)
 				if (count of theReturnedList) = 0 then
-					set dialogResult to display dialog ¬
-						"Can't find the track " & my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & " in the path " & "'" & my _primaryPathToMusic_ & "'.
-" & ¬
-						"Search in second path " & "'" & my _secondaryPathToMusic_ & "' " & ¬
-						"?" buttons {"Cancel", "Continue", "OK"} ¬
-						default button "OK" cancel button "Cancel" with icon 1
-					if button returned of dialogResult is "OK" then
-						set thePath to my _secondaryPathToMusic_
-						set theReturnedList to my spotlightTrack(theTrack, thePath)
-						-- search manually
-						if (count of theReturnedList) = 0 then
-							--display dialog my thePrimaryPathToMusic
-							--set thePosixPrimaryPathToMusic to POSIX file (thePrimaryPath)
-							set theFile to my chooseFileManually(theTrack, my _primaryPathToMusic_)
-							if theFile is not equal to "" then
-								tell script "Finder Utilities"
-									set thePath to getParentPath(theFile)
-									display dialog thePath
-								end tell
-								copy theFile to the end of theReturnedList
-							end if
+					if yesRemember = false then
+						set dialogResult to display dialog ¬
+							"Can't find the track " & my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & " in the path " & "'" & my _primaryPathToMusic_ & "'.
+" & "Search in second path " & "'" & my _secondaryPathToMusic_ & "' " & ¬
+							"?" buttons {"Cancel", "Yes", "Yes, Remember"} ¬
+							default button "Yes" cancel button "Cancel" with icon 1
+						set theButtonReturn to button returned of dialogResult
+						if theButtonReturn is "Yes" then
+							set searchYes to true
+						else if theButtonReturn is "Yes, Remember" then
+							set yesRemember to true
 						end if
 					end if
+					
+					if searchYes or yesRemember then
+						set thePath to my _secondaryPathToMusic_
+						set theReturnedList to my spotlightTrack(theTrack, thePath)
+					end if
+					
+					-- search manually
+					if (count of theReturnedList) = 0 then
+						--display dialog my thePrimaryPathToMusic
+						--set thePosixPrimaryPathToMusic to POSIX file (thePrimaryPath)
+						set theFile to my chooseFileManually(theTrack, my _primaryPathToMusic_)
+						if theFile is not equal to "" then
+							tell script "Finder Utilities"
+								set thePath to getParentPath(theFile)
+							end tell
+							copy theFile to the end of theReturnedList
+						end if
+					end if
+					
+					
 				end if
 				
 				if (count of theReturnedList) is equal to 0 then
