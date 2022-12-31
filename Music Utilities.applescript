@@ -759,7 +759,7 @@ on checkIfDestinationHasEnoughSpace(theTracks, theDestination)
 end checkIfDestinationHasEnoughSpace
 
 to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
-	log "exportFileToSpecificFolder"
+	log "exportFileToSpecificFolder : theFileTrack = " & theFileTrack as string
 	tell script "Finder Utilities"
 		--set theFolderName to my getiTunesFolderName(theFileTrack)
 		--display dialog theFolderName
@@ -768,6 +768,7 @@ to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 		--display dialog theFolderName
 		tell script "String Lib"
 			set theSplittedPath to explode("/", theFileTrack)
+			log "exportFileToSpecificFolder : theSplittedPath = " & theSplittedPath as string
 			set theCount to count of theSplittedPath
 			set theFileName to item (theCount) of theSplittedPath
 			set theAlbumFolder to item (theCount - 1) of theSplittedPath
@@ -1960,6 +1961,7 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 					if thePath contains my _primaryPathToMusic_ then
 						set location of theTrack to theFound
 						my addTrackToPlaylist(theTrack, thePlaylist)
+						return my _fixTrackLocationTrackFound_
 					else
 						log "fixTrackLocation export : theFound = " & theFound & " : " & "theDestination" & " = " & theDestination
 						set theCopiedFile to my exportFileToSpecificFolder(theFound, theDestination, true)
@@ -1971,7 +1973,7 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 								return my _fixTrackLocationTrackFound_
 							on error
 								display dialog "fixTrackLocation export : problem with location = " & class of theCopiedFile
-								return my _fixTrackLocationTrackFound_
+								return my _fixTrackLocationNotTrackPath_
 							end try
 						end if
 					end if
@@ -1986,21 +1988,23 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 					if thePath is equal to my _primaryPathToMusic_ then
 						set location of theTrack to theChoice
 						my addTrackToPlaylist(theTrack, thePlaylist)
+						return my _fixTrackLocationTrackFound_
 					else if thePath is equal to my _secondaryPathToMusic_ then
 						--my exportFileToSpecificFolder(theChoice, theDestination, true)
-						set theCopiedFile to my exportFileToSpecificFolder(theFound, theDestination, true)
+						--						display dialog theChoice
+						set theCopiedFile to my exportFileToSpecificFolder(theChoice as string, theDestination, true)
 						log "fixTrackLocation export : theCopiedFile = " & theCopiedFile & " --- " & class of theCopiedFile
 						if theCopiedFile is not equal to "" then
 							try
 								set location of theTrack to theCopiedFile
 								my addTrackToPlaylist(theTrack, thePlaylist)
+								return my _fixTrackLocationTrackFound_
 							on error
 								display dialog "fixTrackLocation export : problem with location = " & class of theCopiedFile
-								return my _fixTrackLocationTrackFound_
+								return my _fixTrackLocationNotTrackPath_
 							end try
 						end if
 					end if
-					return my _fixTrackLocationTrackFound_
 				else
 					return my _fixTrackLocationMoreThanOneTrack_
 				end if
