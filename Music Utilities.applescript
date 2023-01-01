@@ -768,7 +768,6 @@ to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 		--display dialog theFolderName
 		tell script "String Lib"
 			set theSplittedPath to explode("/", theFileTrack)
-			log "exportFileToSpecificFolder : theSplittedPath = " & theSplittedPath as string
 			set theCount to count of theSplittedPath
 			set theFileName to item (theCount) of theSplittedPath
 			set theAlbumFolder to item (theCount - 1) of theSplittedPath
@@ -939,7 +938,7 @@ to findDeadTracks(theTracks)
 		set theCount to count of theTracks
 		repeat with theTrack in theTracks
 			try
-				my showProgress(i, theCount, "In progress...", my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_), "")
+				my showProgress(i, theCount, "In progress...", my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
 				if (class of theTrack is not shared track) then
 					set theFileTrack to (the location of theTrack)
 					if theFileTrack is missing value then
@@ -1774,7 +1773,7 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	set i to 0
 	repeat with theTrack in theTracks
 		set searchYes to false
-		my showProgress(i, length of theTracks, "", "")
+		my showProgress(i, length of theTracks, "In progress...", my getFormatedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
 		
 		tell application "Music"
 			set theLocation to location of theTrack
@@ -1943,10 +1942,6 @@ on run
 	
 end run
 
-to copyFileTo(theTrack, theFound, theDestination)
-	
-end copyFileTo
-
 to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 	tell application "Music"
 		log "fixTrackLocation"
@@ -1975,6 +1970,8 @@ to fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 								display dialog "fixTrackLocation export : problem with location = " & class of theCopiedFile
 								return my _fixTrackLocationNotTrackPath_
 							end try
+						else
+							return my _fixTrackLocationNotTrackPath_
 						end if
 					end if
 				else
