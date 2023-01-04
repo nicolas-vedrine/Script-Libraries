@@ -1762,9 +1762,7 @@ property _fixTrackLocationTrackNotFound_ : "3"
 to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	--display dialog "fixDeadTracks"
 	log "fixDeadTracks : thePrimaryPath = " & thePrimaryPath & " theSecondaryPath = " & theSecondaryPath & " theFindFolder = " & theFindFolder
-	--set my _primaryPathToMusic_ to quoted form of POSIX path of (choose folder with prompt "Set the volume 1 to SEARCH")
 	set my _primaryPathToMusic_ to thePrimaryPath
-	--set my _secondaryPathToMusic_ to quoted form of POSIX path of (choose folder with prompt "Set the volume 2 to SEARCH")
 	set my _secondaryPathToMusic_ to theSecondaryPath
 	set theItemFound to {}
 	set theItemNotFound to {}
@@ -1802,7 +1800,6 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 					
 					-- search manually
 					if (count of theReturnedList) = 0 then
-						--display dialog my thePrimaryPathToMusic
 						--set thePosixPrimaryPathToMusic to POSIX file (thePrimaryPath)
 						set theFile to my chooseFileManually(theTrack, my _primaryPathToMusic_)
 						if theFile is not equal to "" then
@@ -1812,7 +1809,6 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 							copy theFile to the end of theReturnedList
 						end if
 					end if
-					
 					
 				end if
 				
@@ -2031,31 +2027,37 @@ to spotlightTrack(theTrack, thePath)
 		set theName to replaceChars(theName, theSpecialChars, "_")
 	end tell
 	
-	--	set theAlbumParam to {name:"kMDItemAlbum", value:theAlbum}
-	set theAlbumParam to {name:"kMDItemFSName", value:theAlbum}
-	set theParams to {theAlbumParam}
+	tell script "String Utilities"
+		set theSpaceName to trim(theName)
+	end tell
+	
+	set theNameParam to {name:"kMDItemFSName", value:theSpaceName}
+	set theParams to {theNameParam}
 	
 	set theFormattedReturnedList to my spotlightQuery(thePath, theParams)
-	
-	(*
-		if thePath is equal to my _secondaryPathToMusic_ then
-			log "spotlightTrack : count of theFormattedReturnedList = " & (count of theFormattedReturnedList)
+	repeat with theItem in theFormattedReturnedList
+		log "spotlightTrack : theItem = " & theItem
+		if theItem contains theAlbum then
+			return {theItem}
 		end if
-	*)
+	end repeat
 	
-	set theNewPath to ""
-	tell script "String Lib"
-		repeat with theItem in theFormattedReturnedList
-			log "spotlightTrack : theItem = " & theItem
-			
-			if theItem contains theArtist then
+	
+	--set theNewPath to ""
+	(*
+		tell script "String Lib"
+			repeat with theItem in theFormattedReturnedList
+				log "spotlightTrack : theItem = " & theItem
+				
 				log "spotlightTrack : theItem : theArtist = " & theArtist
 				set theNewPath to (leftStringFromRight(theItem, "/") & "/")
 				set theNewPath to theItem & "/"
 				log "spotlightTrack : theNewPath = " & theNewPath
 				
-				--log "spotlightTrack : theConvertName = " & theConvertName
-				set theTitleParam to {name:"kMDItemFSName", value:theName}
+				tell script "String Utilities"
+					set theSpaceName to trim(theName)
+					set theTitleParam to {name:"kMDItemFSName", value:theSpaceName}
+				end tell
 				set theParams to {theTitleParam}
 				
 				set theFormattedReturnedList to my spotlightQuery(theNewPath, theParams)
@@ -2065,10 +2067,11 @@ to spotlightTrack(theTrack, thePath)
 					log "spotlightTrack : count of theFormattedReturnedList = " & (count of theFormattedReturnedList)
 					return theFormattedReturnedList
 				end if
-			end if
-		end repeat
-		return {}
-	end tell
+				
+			end repeat
+		end tell
+	*)
+	return {}
 end spotlightTrack
 
 to spotlightQuery(thePath, theSpotlightQueryParams)
