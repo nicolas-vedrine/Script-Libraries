@@ -2010,7 +2010,7 @@ end fixTrackLocation
 
 to spotlightTrack(theTrack, thePath)
 	log "spotlightTrack"
-	set theSpecialChars to {"/", "\""}
+	set theSpecialChars to {"/", "\"", "?"}
 	tell application "Music"
 		set theArtist to artist of theTrack
 		set theAlbum to album of theTrack
