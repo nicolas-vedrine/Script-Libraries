@@ -1836,21 +1836,12 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 			end if
 		end tell
 		set i to i + 1
+		
+		delay 0.3
+		log "fixDeadTracks : delay"
+		
 	end repeat
 	
-	--display dialog (count of theList)
-	
-	(*
-				set theReport to getListReport(theList, _formatedTrackNameTrackNameArtistNameAlbumName_)
-				set theUIReport to display dialog "Tracks fixed :" default answer theReport with icon note buttons {"OK"}
-			*)
-	
-	
-	
-	--set theReport to getListReport(theItemNotFound, _formatedTrackNameTrackNameArtistNameAlbumName_)
-	--set the clipboard to theReport
-	--set theUIReport to display dialog "Tracks not found :" default answer theReport with icon note buttons {"OK"}
-	--my showReport("items found.", count of theItemFound, count of theTracks)
 	set theResult to {itemsFound:theItemFound, itemsNotFound:theItemNotFound, itemsAlreadyFound:theItemAlreadyFound}
 	return theResult
 end fixDeadTracks
@@ -1909,32 +1900,7 @@ end testFixDeadTracks
 
 on run
 	
-	(*
-		set my _primaryPathToMusic_ to "/Volumes/VOYAGEUR/iTunes/Musique/"
-		set thePosixPrimaryPathToMusic to POSIX file (my _primaryPathToMusic_)
-		set theTracks to getDialogTracksKind(false)
-		repeat with theTrack in theTracks
-			set theFile to my chooseFileManually(theTrack, thePosixPrimaryPathToMusic)
-		end repeat
-		
-		return
-	*)
-	
-	
 	my testFixDeadTracks()
-	-- test
-	
-	(*
-		set theTracks to getDialogTracksKind(false)
-		set my _primaryPathToMusic_ to "/Volumes/VOYAGEUR/iTunes/Musique/"
-		set my _secondaryPathToMusic_ to "/Volumes/music/Musique/"
-		set thePath to POSIX file (my _primaryPathToMusic_)
-		repeat with theTrack in theTracks
-			set theFile to my chooseFileManually(theTrack, thePath)
-			display dialog theFile contains my _primaryPathToMusic_
-		end repeat
-	*)
-	
 	
 end run
 
@@ -2022,56 +1988,24 @@ to spotlightTrack(theTrack, thePath)
 	end tell
 	
 	tell script "String Utilities"
-		set theArtist to replaceChars(theArtist, theSpecialChars, "_")
-		set theAlbum to replaceChars(theAlbum, theSpecialChars, "_")
-		set theName to replaceChars(theName, theSpecialChars, "_")
+		set theArtist to trim(replaceChars(theArtist, theSpecialChars, "_"))
+		set theAlbum to trim(replaceChars(theAlbum, theSpecialChars, "_"))
+		set theName to trim(replaceChars(theName, theSpecialChars, "_"))
 	end tell
 	
-	tell script "String Utilities"
-		set theSpaceName to trim(theName)
-	end tell
-	
-	set theNameParam to {name:"kMDItemFSName", value:theSpaceName}
+	set theNameParam to {name:"kMDItemFSName", value:theName}
 	set theParams to {theNameParam}
 	
 	set theFormattedReturnedList to my spotlightQuery(thePath, theParams)
+	set theFinalList to {}
 	repeat with theItem in theFormattedReturnedList
-		log "spotlightTrack : theItem = " & theItem
+		log "spotlightTrack : theItem = " & theItem & " - " & "theAlbum = " & theAlbum & " - " & ((theItem contains theAlbum) as string)
+		--display dialog theItem & " - " & theAlbum
 		if theItem contains theAlbum then
-			return {theItem}
+			copy theItem to the end of theFinalList
 		end if
 	end repeat
-	
-	
-	--set theNewPath to ""
-	(*
-		tell script "String Lib"
-			repeat with theItem in theFormattedReturnedList
-				log "spotlightTrack : theItem = " & theItem
-				
-				log "spotlightTrack : theItem : theArtist = " & theArtist
-				set theNewPath to (leftStringFromRight(theItem, "/") & "/")
-				set theNewPath to theItem & "/"
-				log "spotlightTrack : theNewPath = " & theNewPath
-				
-				tell script "String Utilities"
-					set theSpaceName to trim(theName)
-					set theTitleParam to {name:"kMDItemFSName", value:theSpaceName}
-				end tell
-				set theParams to {theTitleParam}
-				
-				set theFormattedReturnedList to my spotlightQuery(theNewPath, theParams)
-				log "spotlightTrack : theFormattedReturnedList = " & theFormattedReturnedList
-				
-				if (count of theFormattedReturnedList) > 0 then
-					log "spotlightTrack : count of theFormattedReturnedList = " & (count of theFormattedReturnedList)
-					return theFormattedReturnedList
-				end if
-				
-			end repeat
-		end tell
-	*)
-	return {}
+	return theFinalList
 end spotlightTrack
 
 to spotlightQuery(thePath, theSpotlightQueryParams)
@@ -2089,6 +2023,9 @@ to spotlightQuery(thePath, theSpotlightQueryParams)
 			repeat with theSpecialChar in theSpecialChars
 				--display dialog theParamValue
 				set theParamValue to getLongestPart(theParamValue, theSpecialChar)
+				if (count of theParamValue) < 3 then
+					return {}
+				end if
 			end repeat
 			set theParamValue to "*" & theParamValue & "*"
 			log "spotlightQuery : theParamValue theSpecialChar = " & theParamValue
@@ -2108,9 +2045,14 @@ to spotlightQuery(thePath, theSpotlightQueryParams)
 		set theReturnedList to (do shell script theCommand)
 		set theFormattedReturnedList to theReturnedList's paragraphs
 		log "spotlightQuery : count of theFormattedReturnedList = " & (count of theFormattedReturnedList)
-		repeat with theItem in theFormattedReturnedList
-			log "spotlightQuery : item of theFormattedReturnedList = " & (theItem as string)
-		end repeat
+		(*
+			repeat with theItem in theFormattedReturnedList
+				log "spotlightQuery : item of theFormattedReturnedList = " & (theItem as string)
+			end repeat
+		*)
+		tell script "List Lib"
+			set theFormattedReturnedList to sortList(theFormattedReturnedList)
+		end tell
 		return theFormattedReturnedList
 	on error msg number num
 		--display dialog "error with command : " & theCommand
