@@ -88,6 +88,11 @@ property _musicExtensions_ : {"MP3", "AAC", "AIFF", "WAV", "ALAC"}
 
 
 ---------------------- Retreiving ----------------------
+
+--c--   getAllPlaylists()
+--d--   Get all the library's playlists.
+--r--   list -- 
+--x--   getAllPlaylists() --> {playlist 1, playlist 2, playlist n, ...}
 to getAllPlaylists()
 	tell application "Music"
 		set thePlaylists to every playlist whose name is not "mix genius"
@@ -95,6 +100,11 @@ to getAllPlaylists()
 	end tell
 end getAllPlaylists
 
+--c--   getAllTrackPlaylists(theTrack)
+--d--   Get all the playlists that contain the track.
+--a--   theTrack : track
+--r--   list -- 
+--x--   getAllTrackPlaylists(theTrack) --> {playlist 1, playlist 2, playlist n, ...}
 to getAllTrackPlaylists(theTrack)
 	tell application "Music"
 		set theResults to every user playlist of theTrack whose smart is false and name is not equal to "doublons"
@@ -102,17 +112,27 @@ to getAllTrackPlaylists(theTrack)
 	end tell
 end getAllTrackPlaylists
 
+--c--   getCurrentTrack(isDBIDTracks)
+--d--   Get the current track.
+--a--   isDBIDTracks : boolean -- to return the track from the library playlist or the user playlist
+--r--   file track 
+--x--   getCurrentTrack(isDBIDTracks) --> file track
 to getCurrentTrack(isDBIDTracks)
 	tell application "Music"
 		set theTrack to (get current track)
 		if (isDBIDTracks) then
-			return my getDBIDTracks({theTrack})
+			return item 1 of my getDBIDTracks({theTrack})
 		else
 			return theTrack
 		end if
 	end tell
 end getCurrentTrack
 
+--c--   getDBIDTracks(theTracks)
+--d--   Get track's database ID.
+--a--   theTracks : list -- the list of the tracks
+--r--   list -- the list of tracks from the library playlist
+--x--   getDBIDTracks(theTracks) --> {file track 1, file track 2, file track n, ...}
 to getDBIDTracks(theTracks)
 	tell application "Music"
 		set theTracksList to {}
@@ -128,6 +148,11 @@ to getDBIDTracks(theTracks)
 	end tell
 end getDBIDTracks
 
+--c--   getDialogTracksKind(isDBIDTracks)
+--d--   Get a dialog message to select the current track or the selected tracks.
+--a--   isDBIDTracks : boolean -- to return the result from the library playlist or the user playlist
+--r--   list -- the list of tracks from the library playlist
+--x--   getDialogTracksKind(isDBIDTracks) --> {file track 1, file track 2, file track n, ...}
 to getDialogTracksKind(isDBIDTracks)
 	tell application "Music"
 		set dialogResult to display dialog ¬
@@ -135,7 +160,6 @@ to getDialogTracksKind(isDBIDTracks)
 			default button "Selected" cancel button ¬
 			"Cancel" with icon 1
 		if button returned of dialogResult is "Selected" then
-			log "selected"
 			set theTracks to my getSelectedTracks(isDBIDTracks)
 		else
 			set theTracks to my getCurrentTrack(isDBIDTracks)
@@ -144,6 +168,12 @@ to getDialogTracksKind(isDBIDTracks)
 	end tell
 end getDialogTracksKind
 
+
+--c--   getFolderPlaylistByName(folderPlaylistName)
+--d--   Get a folder playlist by its name.
+--a--   folderPlaylistName : string -- the name of the folder playlist
+--r--   list of folder playlists 
+--x--   getFolderPlaylistByName(folderPlaylistName) --> {folder playlist 1, folder playlist 2, folder playlist n, ...}
 to getFolderPlaylistByName(folderPlaylistName)
 	tell application "Music"
 		set folderPlaylists to every folder playlist whose name is folderPlaylistName
@@ -151,21 +181,32 @@ to getFolderPlaylistByName(folderPlaylistName)
 	end tell
 end getFolderPlaylistByName
 
+--c--   getLastFolderPlaylist(theFolderPlaylist)
+--d--   Get the last user playlist of a folder playlist.
+--a--   theFolderPlaylist : folder playlist -- the folder playlist to get its last playlist
+--r--   a user playlist 
+--x--   getLastFolderPlaylist(theFolderPlaylist) --> user playlist or null if no user playlist in the folder playlist
 to getLastFolderPlaylist(theFolderPlaylist)
 	tell application "Music"
 		set userPlaylists to every user playlist
 		set tc to count userPlaylists
 		repeat with i from tc to 1 by -1
 			set p to item i of userPlaylists
-			try
-				if (parent of p) = theFolderPlaylist then
-					return p -- the last user playlists at root of theFolderPlaylist  
+			if my hasParent(p) then
+				if parent of p = theFolderPlaylist then
+					return p
 				end if
-			end try
+			end if
 		end repeat
 	end tell
+	return null
 end getLastFolderPlaylist
 
+--c--   getPlaylistByName(playlistName)
+--d--   Get the list of user playlists whose name is the playlist's name
+--a--   playlistName : string -- the name of the playlists
+--r--   a list of user playlists
+--x--   getPlaylistByName(playlistName) --> {user playlist 1, user playlist 2, user playlist n, ...}
 to getPlaylistByName(playlistName)
 	tell application "Music"
 		set pls to get every user playlist whose name is equal to playlistName
@@ -173,7 +214,13 @@ to getPlaylistByName(playlistName)
 	end tell
 end getPlaylistByName
 
-to getPlaylistTracks(thePlaylist, limit, start)
+--c--   getPlaylistTracks(thePlaylist, limit)
+--d--   Get the last tracks from a playlist with a limit in MB.
+--a--   thePlaylist : user playlist -- the user playlist to get its tracks
+--a--   limit : number -- the limit in MB
+--r--   list of tracks
+--x--   getPlaylistTracks(thePlaylist, limit) --> {file track 1, file track 2, file track n, ...}
+to getPlaylistTracks(thePlaylist, limit)
 	tell application "Music"
 		set megaBitesSize to 0
 		set tracksList to every track of thePlaylist
@@ -196,6 +243,12 @@ end getPlaylistTracks
 
 ---------- GET TREE PLAYLISTS START ----------
 
+--c--   getPlaylistsTree(thePlaylists, theLength)
+--d--   Get the playlists tree, like the one in Music. See testGetChoosenPlaylistFromTree() to test.
+--a--   thePlaylists : list -- the list of playlists to parse.
+--a--   theLength : number -- the limit of playlists to parse (set the total to parse all the playlists).
+--r--   a list of hierarchical records
+--x--   getPlaylistsTree({thePlaylists}, 52) --> {record 1, record 2, record 3, record n}
 to getPlaylistsTree(thePlaylists, theLength)
 	set theList to {}
 	set theFinalList to {}
@@ -251,7 +304,7 @@ to getPlaylistsTree(thePlaylists, theLength)
 			end if
 			
 			tell script "UI Utilities"
-				showProgress(i, theLength, i & " / " & theLength & " - " & thePlName, "Parsing playlists")
+				showProgress(i, theLength, i & " / " & theLength & " - " & thePlName, "Parsing playlists...")
 			end tell
 			
 			set the end of theList to theItem
@@ -266,7 +319,12 @@ to getPlaylistsTree(thePlaylists, theLength)
 	
 end getPlaylistsTree
 
-on getTreeItem(thePlaylist)
+--c--   getTreeItem(thePlaylist)
+--d--   Get the item of the tree of the playlists tree.
+--a--   thePlaylist : the playlist to set as an item
+--r--   a record
+--x--   getTreeItem(thePlaylist) --> record
+to getTreeItem(thePlaylist)
 	tell application "Music"
 		set theName to name of thePlaylist
 		set theID to persistent ID of thePlaylist
@@ -287,6 +345,10 @@ on getTreeItem(thePlaylist)
 	return theItem
 end getTreeItem
 
+--c--   getRootPlaylists()
+--d--   Get the root playlists only.
+--r--   a list of playlists
+--x--   getRootPlaylists() --> list of playlists
 to getRootPlaylists()
 	tell application "Music"
 		set theList to {}
@@ -301,7 +363,12 @@ to getRootPlaylists()
 	end tell
 end getRootPlaylists
 
-on hasParent(thePlaylist)
+--c--   hasParent(thePlaylist)
+--d--   To know if a playlist has parent or not.
+--a--   thePlaylist : the playlist to know if it has a parent
+--r--   boolean
+--x--   hasParent(thePlaylist) --> boolean
+to hasParent(thePlaylist)
 	tell application "Music"
 		try
 			set theParentPlaylist to parent of thePlaylist
@@ -312,26 +379,59 @@ on hasParent(thePlaylist)
 	end tell
 end hasParent
 
-on getChildren(thePlaylistFolder)
+to getChildren(thePlaylistFolder, isRecursive)
 	tell application "Music"
-		set theList to {}
+		set theItem to my getTreeItem(thePlaylistFolder)
 		set thePlaylists to every playlist
+		--set theItem to my getTreeItem(thePlaylistFolder)
 		repeat with thePlaylist in thePlaylists
-			try
-				if thePlaylist's parent = thePlaylistFolder then
-					if class of thePlaylist is folder playlist then
-						set thePlaylistName to name of thePlaylist
-						set theChildren to my getChildren(folder playlist (name of thePlaylist))
-						set theItem to theChildren
-						set end of theList to theItem
-					else
-						set theItem to thePlaylist
-						set end of theList to theItem
+			if my hasParent(thePlaylist) then
+				--log ((name of parent of thePlaylist as string) = (name of thePlaylistFolder as string))
+				if ((persistent ID of parent of thePlaylist) = (persistent ID of thePlaylistFolder)) then
+					--log persistent ID of parent of thePlaylist as string
+					--log persistent ID of thePlaylistFolder as string
+					--log name of thePlaylist as string
+					--log name of thePlaylistFolder as string
+					--		set theChildren to theChildren of theItem
+					
+					
+					set theChildItem to my getTreeItem(thePlaylist)
+					copy theChildItem to the end of theChildren of theItem
+					
+					
+					if isRecursive and class of thePlaylist is folder playlist then
+						log "" & name of thePlaylist as string
+						set theNewItem to my getChildren(thePlaylist, isRecursive)
+						copy theNewItem to the end of theChildren of theChildItem
+						repeat with theChild in theChildren of theNewItem
+							log "       " & theName of theChild as string
+							--copy theChild to the end of theChildren of theNewItem
+						end repeat
+						log (count of theChildren of theNewItem)
+						log "-------------"
 					end if
+					
+					
+					
 				end if
-			end try
+			end if
+			(*
+				try
+					if thePlaylist's parent = thePlaylistFolder then
+						if class of thePlaylist is folder playlist then
+							set thePlaylistName to name of thePlaylist
+							set theChildren to my getChildren(folder playlist (name of thePlaylist))
+							set theItem to theChildren
+							set end of theList to theItem
+						else
+							set theItem to thePlaylist
+							set end of theList to theItem
+						end if
+					end if
+				end try
+			*)
 		end repeat
-		return theList
+		return theItem
 	end tell
 end getChildren
 
@@ -2016,6 +2116,29 @@ on run
 	
 	--set thePlaylists to my testGetAllTrackPlaylists()
 	
+	set theRootPlaylists to my testRootPlaylists()
+	set theList to {}
+	repeat with theRootPlaylist in theRootPlaylists
+		tell application "Music"
+			if class of theRootPlaylist is folder playlist and name of theRootPlaylist is "=MISC=" then
+				set theItem to my getChildren(theRootPlaylist, true)
+				--log (name of theRootPlaylist & " - " & (count of theChildren))
+				--set theChildren to theChildren of theItem
+				--repeat with theChild in theChildren
+				--log name of theRootPlaylist & " - " & theName of theChild as string
+				--end repeat
+				--log "----------"
+				copy theItem to the end of theList
+			end if
+		end tell
+	end repeat
+	
+	tell script "List Utilities"
+		set theFlattenList to flattenList(theList, null, 0)
+	end tell
+	
+	return theFlattenList
+	
 	
 end run
 
@@ -2073,6 +2196,7 @@ to testGetChoosenPlaylistFromTree()
 		--set theCount to 20
 		
 		set thePlaylistsTree to my getPlaylistsTree(thePlaylists, theCount)
+		return thePlaylistsTree
 		tell script "List Utilities"
 			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
 		end tell
@@ -2133,3 +2257,26 @@ end testGetTracksWithSameArtworkThanTheSelectedTrack
 to testShowReport()
 	my showReport("Test de texte.", 2, 10)
 end testShowReport
+
+to testGetCurrentTrack()
+	set theTrack to my getCurrentTrack(false)
+	return theTrack
+end testGetCurrentTrack
+
+to testGetDBIDTracks()
+	set theTracks to my getDialogTracksKind(false)
+	set theDBID to my getDBIDTracks(theTracks)
+	return theDBID
+end testGetDBIDTracks
+
+to testGetLastFolderPlaylist()
+	set theMusicBoxFolderPlaylist to item 1 of my getFolderPlaylistByName("=MUSIC BOX=")
+	set theLastMusicBoxFolderPlaylist to my getLastFolderPlaylist(theMusicBoxFolderPlaylist)
+	return theLastMusicBoxFolderPlaylist
+end testGetLastFolderPlaylist
+
+to testGetPlaylistTracks()
+	set thePlaylist to item 1 of my getPlaylistByName("Juke Box 69")
+	set theTracks to my getPlaylistTracks(thePlaylist, 2000)
+	return theTracks
+end testGetPlaylistTracks
