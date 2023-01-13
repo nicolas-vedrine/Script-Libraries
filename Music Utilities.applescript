@@ -379,57 +379,22 @@ to hasParent(thePlaylist)
 	end tell
 end hasParent
 
-to getChildren(thePlaylistFolder, isRecursive)
+--c--   hasParent(thePlaylist)
+--d--   To know if a playlist has parent or not.
+--a--   thePlaylist : the playlist to know if it has a parent
+--r--   boolean
+--x--   hasParent(thePlaylist) --> boolean
+to getChildren(thePlaylistFolder)
 	tell application "Music"
 		set theItem to my getTreeItem(thePlaylistFolder)
 		set thePlaylists to every playlist
-		--set theItem to my getTreeItem(thePlaylistFolder)
 		repeat with thePlaylist in thePlaylists
 			if my hasParent(thePlaylist) then
-				--log ((name of parent of thePlaylist as string) = (name of thePlaylistFolder as string))
 				if ((persistent ID of parent of thePlaylist) = (persistent ID of thePlaylistFolder)) then
-					--log persistent ID of parent of thePlaylist as string
-					--log persistent ID of thePlaylistFolder as string
-					--log name of thePlaylist as string
-					--log name of thePlaylistFolder as string
-					--		set theChildren to theChildren of theItem
-					
-					
 					set theChildItem to my getTreeItem(thePlaylist)
 					copy theChildItem to the end of theChildren of theItem
-					
-					
-					if isRecursive and class of thePlaylist is folder playlist then
-						log "" & name of thePlaylist as string
-						set theNewItem to my getChildren(thePlaylist, isRecursive)
-						copy theNewItem to the end of theChildren of theChildItem
-						repeat with theChild in theChildren of theNewItem
-							log "       " & theName of theChild as string
-							--copy theChild to the end of theChildren of theNewItem
-						end repeat
-						log (count of theChildren of theNewItem)
-						log "-------------"
-					end if
-					
-					
-					
 				end if
 			end if
-			(*
-				try
-					if thePlaylist's parent = thePlaylistFolder then
-						if class of thePlaylist is folder playlist then
-							set thePlaylistName to name of thePlaylist
-							set theChildren to my getChildren(folder playlist (name of thePlaylist))
-							set theItem to theChildren
-							set end of theList to theItem
-						else
-							set theItem to thePlaylist
-							set end of theList to theItem
-						end if
-					end if
-				end try
-			*)
 		end repeat
 		return theItem
 	end tell
@@ -2116,12 +2081,19 @@ on run
 	
 	--set thePlaylists to my testGetAllTrackPlaylists()
 	
+	return my testGetChildrenRootPlaylists()
+	
+end run
+
+------- UNIT TESTS -------
+
+to testGetChildrenRootPlaylists()
 	set theRootPlaylists to my testRootPlaylists()
 	set theList to {}
 	repeat with theRootPlaylist in theRootPlaylists
 		tell application "Music"
-			if class of theRootPlaylist is folder playlist and name of theRootPlaylist is "=MISC=" then
-				set theItem to my getChildren(theRootPlaylist, true)
+			if class of theRootPlaylist is folder playlist then
+				set theItem to my getChildren(theRootPlaylist)
 				--log (name of theRootPlaylist & " - " & (count of theChildren))
 				--set theChildren to theChildren of theItem
 				--repeat with theChild in theChildren
@@ -2133,16 +2105,9 @@ on run
 		end tell
 	end repeat
 	
-	tell script "List Utilities"
-		set theFlattenList to flattenList(theList, null, 0)
-	end tell
+	return theList
 	
-	return theFlattenList
-	
-	
-end run
-
-------- UNIT TESTS -------
+end testGetChildrenRootPlaylists
 
 to testRootPlaylists()
 	set theRootPlaylists to my getRootPlaylists()
