@@ -119,12 +119,17 @@ end getAllTrackPlaylists
 --x--   getCurrentTrack(isDBIDTracks) --> file track
 to getCurrentTrack(isDBIDTracks)
 	tell application "Music"
-		set theTrack to (get current track)
-		if (isDBIDTracks) then
-			return item 1 of my getDBIDTracks({theTrack})
-		else
-			return theTrack
-		end if
+		try
+			set theTrack to (get current track)
+			if (isDBIDTracks) then
+				return item 1 of my getDBIDTracks({theTrack})
+			else
+				return theTrack
+			end if
+		on error errorMessage number errorNumber
+			display dialog errorMessage & " - errorNumber : " & errorNumber
+			return null
+		end try
 	end tell
 end getCurrentTrack
 
@@ -162,7 +167,7 @@ to getDialogTracksKind(isDBIDTracks)
 		if button returned of dialogResult is "Selected" then
 			set theTracks to my getSelectedTracks(isDBIDTracks)
 		else
-			set theTracks to my getCurrentTrack(isDBIDTracks)
+			set theTracks to {my getCurrentTrack(isDBIDTracks)}
 		end if
 		return theTracks
 	end tell
@@ -367,7 +372,7 @@ end getRootPlaylists
 --d--   To know if a playlist has parent or not.
 --a--   thePlaylist : the playlist to know if it has a parent
 --r--   boolean
---x--   hasParent(thePlaylist) --> boolean
+--x--   hasParent(thePlaylist) --> true or false
 to hasParent(thePlaylist)
 	tell application "Music"
 		try
@@ -379,27 +384,32 @@ to hasParent(thePlaylist)
 	end tell
 end hasParent
 
---c--   hasParent(thePlaylist)
---d--   To know if a playlist has parent or not.
---a--   thePlaylist : the playlist to know if it has a parent
---r--   boolean
---x--   hasParent(thePlaylist) --> boolean
+--c--   getChildren(thePlaylistFolder)
+--d--   Get the children of a playlist folder.
+--a--   thePlaylistFolder : the playlist folder to parse
+--r--   list
+--x--   getChildren(thePlaylistFolder) --> {playlist 1, playlist 2, playlist n, ...}
 to getChildren(thePlaylistFolder)
 	tell application "Music"
-		set theItem to my getTreeItem(thePlaylistFolder)
+		set theChildren to {}
 		set thePlaylists to every playlist
 		repeat with thePlaylist in thePlaylists
 			if my hasParent(thePlaylist) then
 				if ((persistent ID of parent of thePlaylist) = (persistent ID of thePlaylistFolder)) then
-					set theChildItem to my getTreeItem(thePlaylist)
-					copy theChildItem to the end of theChildren of theItem
+					copy thePlaylist to the end of theChildren
 				end if
 			end if
 		end repeat
-		return theItem
+		return theChildren
 	end tell
 end getChildren
 
+--c--   getChoosenPlaylist(theChoice, theFlattenPlaylists)
+--d--   Get the choosen playlist from an UI list.
+--a--   theChoice : string -- the item choosen from the UIList
+--a--   theFlattenPlaylists : list of records -- the flatten list of playlists
+--r--   playlist
+--x--   getChoosenPlaylist("41 -           Clips (iPad) (2 tracks)", {playlist 1, playlist 2, playlist n, ...}) --> playlist  (see testGetChoosenPlaylistFromTree() test unit)
 to getChoosenPlaylist(theChoice, theFlattenPlaylists)
 	set selectedIndex to word 1 of (item 1 of theChoice as string)
 	set theItem to item selectedIndex of theFlattenPlaylists
@@ -412,9 +422,19 @@ end getChoosenPlaylist
 
 ---------- GET TREE PLAYLISTS END ----------
 
+--c--   getSelectedTracks(isDBIDTracks)
+--d--   Get the selected tracks.
+--a--   isDBIDTracks : boolean -- true or false to get the tracks from the current playlist or the library playlist
+--r--   list
+--x--   getChoosenPlaylist("", theFlattenPlaylists) --> {playlist 1, playlist 2}  (see testGetChoosenPlaylistFromTree() test unit)
 to getSelectedTracks(isDBIDTracks)
 	tell application "Music"
 		set theTracks to (get selection)
+		if (count of theTracks) = 0 then
+			display dialog "No track selected." buttons {"Ok"} ¬
+				default button 1 ¬
+				with icon 1
+		end if
 		if (isDBIDTracks) then
 			return my getDBIDTracks(theTracks)
 		else
@@ -423,18 +443,28 @@ to getSelectedTracks(isDBIDTracks)
 	end tell
 end getSelectedTracks
 
+--c--   getTrackByDBID(theID)
+--d--   Get the track from the library playlist
+--a--   theID : number -- the database ID of the track
+--r--   track
+--x--   getTrackByDBID(theID) --> file track or null if not found
 to getTrackByDBID(theID)
 	tell application "Music"
-		set theResult to (get (every track where database ID is (theID as integer)))
-		if (count of theResult) > 0 then
+		set theResult to tracks where database ID is (theID as integer)
+		if (count of theResult) = 1 then
 			set theTrack to item 1 of theResult
 			return theTrack
 		else
-			display dialog "Track introuvable... --- " & theID
+			return null
 		end if
 	end tell
 end getTrackByDBID
 
+--c--   getTracksByDBID(theIDs)
+--d--   Get the tracks from the library playlist
+--a--   theIDs : list of numbers -- the database IDs of the tracks
+--r--   list
+--x--   getTracksByDBID({105692, 19909, 68271}) --> {file track 1, file track 2, file track 3}
 to getTracksByDBID(theIDs)
 	tell application "Music"
 		set theTracksList to {}
@@ -449,18 +479,31 @@ to getTracksByDBID(theIDs)
 	end tell
 end getTracksByDBID
 
+--c--   getTracksIDList(theTracks)
+--d--   Get the database IDs of the tracks list
+--a--   theTracks : list of tacks -- the tracks to get its database IDs
+--r--   list
+--x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
 to getTracksIDList(theTracks)
 	set theList to {}
 	tell application "Music"
+		if (count of theTracks) = 0 then
+			display dialog "No track selected." buttons {"Ok"} ¬
+				default button 1 ¬
+				with icon 1
+		end if
+		set i to 1
 		repeat with theTrack in theTracks
+			my showProgress(i, count of theTracks, "getTracksIDList", "")
 			set theDatabaseID to database ID of theTrack
 			copy theDatabaseID to the end of theList
+			set i to i + 1
 		end repeat
 	end tell
 	return theList
 end getTracksIDList
 
-to getiTunesFolderName(theStr)
+to getiTunesFolderName(theStr) -- TODO
 	log "getiTunesFolderName : " & theStr as string
 	tell script "String Lib"
 		set theSplitedStr to rightString(POSIX path of theStr, "Media.localized/")
@@ -474,6 +517,11 @@ end getiTunesFolderName
 
 ---------------------- Searching ----------------------
 
+--c--   findDeadTracks(theTracks)
+--d--   Get the database IDs of the tracks list
+--a--   theTracks : list of tacks -- the tracks to get its database IDs
+--r--   list
+--x--   getTracksIDList({file tracks 1, file tracks 2, file tracks 3}) --> {105692, 19909, 68271}
 to findDeadTracks(theTracks)
 	tell application "Music"
 		set theList to {}
@@ -488,8 +536,8 @@ to findDeadTracks(theTracks)
 						copy theTrack to the end of theList
 					end if
 				end if
-			on error
-				log "findDeadTracks === Error with : " & name of theTrack as string
+			on error errorMessage number errorNumber
+				display dialog "findDeadTracks : Error with : " & my getFormattedTrackName(my _formatedTrackNameTrackNameArtistNameAlbumName_) & " " & errorMessage & " - errorNumber : " & errorNumber
 			end try
 			set i to i + 1
 		end repeat
@@ -497,6 +545,12 @@ to findDeadTracks(theTracks)
 	end tell
 end findDeadTracks
 
+--c--   getAlbumTracks(theArtistName, theAlbumName)
+--d--   Get the tracks of an album
+--a--   theArtistName : string -- the name of the artist
+--a--   theAlbumName : string -- the album of the artist
+--r--   list of tracks
+--x--   getAlbumTracks("Iron Maiden", "Powerslave") --> {file track 1, file track 2, file track n, ...}
 to getAlbumTracks(theArtistName, theAlbumName)
 	tell application "Music"
 		set theTracks to (every track whose artist is theArtistName and album is theAlbumName)
@@ -504,10 +558,10 @@ to getAlbumTracks(theArtistName, theAlbumName)
 	end tell
 end getAlbumTracks
 
-to searchForASimilarTrack(theTrack)
+to searchForASimilarTrack(theTrack) -- TODO
 	tell application "Music"
 		set trackFound to my searchTrack(theTrack, name of theTrack as string)
-		log "searchForASimilarTrack : " & trackFound
+		--		log "searchForASimilarTrack : " & trackFound as string
 		set trackName to name of trackFound
 		set artistName to artist of trackFound
 		set albumName to album of trackFound
@@ -525,7 +579,7 @@ to searchForASimilarTrack(theTrack)
 	end tell
 end searchForASimilarTrack
 
-to searchTrack(theTrack, trackName)
+to searchTrack(theTrack, trackName) -- TODO
 	set theList to {}
 	tell application "Music"
 		set artistName to artist of theTrack
@@ -560,7 +614,7 @@ to searchTrack(theTrack, trackName)
 	end tell
 end searchTrack
 
-to moreThanOneResult(theList)
+to moreThanOneResult(theList) -- TODO
 	set choice to getChooseList(theList, false)
 	if choice is not false then
 		set selectedIndex to word 1 of (item 1 of choice as string)
@@ -573,21 +627,23 @@ end moreThanOneResult
 
 ---------- CHARACTERS BEGIN ----------
 
-to addTextToTrack(theTrack, theText)
+to addTextToTrack(theTrack, theText) -- TODO
 	tell application "Music"
 		set theTrackName to name of theTrack
 		set name of theTrack to theTrackName & theText
 	end tell
 end addTextToTrack
 
+--c--   addTrackToPlaylist(theTrack, thePlaylist)
+--d--   Add a track to a playlist
+--a--   theTrack : file track -- the tracks to add
+--a--   thePlaylist : user playlist -- the playlist
+--r--   boolean : true if added, false if not added
+--x--   addTrackToPlaylist(file track, user playlist) --> true
 to addTrackToPlaylist(theTrack, thePlaylist)
 	tell application "Music"
-		--display dialog name of thePlaylist as string
 		try
-			--			display dialog name of theTrack & " " & persistent ID of thePlaylist is not in (get persistent ID of every playlist of theTrack)
-			
 			copy theTrack to the end of thePlaylist
-			--			set the selection to thePlaylist
 			if persistent ID of thePlaylist is not in (get persistent ID of every playlist of theTrack) then
 				display dialog name of theTrack as string
 			end if
@@ -599,15 +655,23 @@ to addTrackToPlaylist(theTrack, thePlaylist)
 	end tell
 end addTrackToPlaylist
 
+--c--   addTracksToPlaylists(theTracks, thePlaylists, showMessage)
+--d--   Add tracks to multiple playlists
+--a--   theTracks : list of file tracks -- the tracks to add
+--a--   thePlaylists : lists of user playlists -- the playlists
+--a--   showMessage : boolean -- true to show a message
+--r--   list : list of file tracks
+--x--   addTracksToPlaylists({file track 1, file track 2, file track n}, {user playlist 1, user playlist 2, user playlist 3, user playlist 4}, true) --> {file track 1, file track 2, file track n}
 to addTracksToPlaylists(theTracks, thePlaylists, showMessage)
 	set i to 1
 	set theList to {}
 	repeat with theTrack in theTracks
-		--display dialog the name of theTrack as string
-		my showProgress(i, length of theTracks, "", "")
+		my showProgress(i, length of theTracks, "", my getFormattedTrackName(my _formatedTrackNameTrackNameArtistNameAlbumName_))
 		repeat with pl in thePlaylists
 			--display dialog the name of pl as string
-			my addTrackToPlaylist(theTrack, pl)
+			if my addTrackToPlaylist(theTrack, pl) then
+				copy theTrack to the end of theList
+			end if
 		end repeat
 		set i to i + 1
 	end repeat
@@ -617,28 +681,46 @@ to addTracksToPlaylists(theTracks, thePlaylists, showMessage)
 	return theTracks
 end addTracksToPlaylists
 
-to combineTracksProperties(trackToDelete, trackToCombine)
+--c--   combineTracksProperties(trackToDelete, trackToCombine)
+--d--   Combine properties of 2 tracks
+--a--   theOriginalTrack : file track -- the original track
+--a--   theTrackToCombine : file track -- the track to set the same properties than the original track
+--x--   combineTracksProperties(file track, file track)
+to combineTracksProperties(theOriginalTrack, theTrackToCombine)
 	tell application "Music"
-		set played count of trackToCombine to ((played count of trackToCombine) + (played count of trackToDelete))
-		set lovedTrackToDelete to loved of trackToDelete
-		set loved of trackToCombine to lovedTrackToDelete
-		if (played date of trackToCombine < played date of trackToDelete or played date of trackToCombine is missing value) then
-			set playedDate to played date of trackToDelete
-			set played date of trackToCombine to playedDate
+		set played count of theTrackToCombine to ((played count of theTrackToCombine) + (played count of theOriginalTrack))
+		set lovedtheOriginalTrack to loved of theOriginalTrack
+		set loved of theTrackToCombine to lovedtheOriginalTrack
+		if (played date of theTrackToCombine < played date of theOriginalTrack or played date of theTrackToCombine is missing value) then
+			set playedDate to played date of theOriginalTrack
+			set played date of theTrackToCombine to playedDate
 		end if
-		set comment of trackToCombine to "combined"
+		set comment of theTrackToCombine to "combined"
 	end tell
 end combineTracksProperties
 
-to deleteTrack(theTrack)
+--c--   deleteTrack(theTrack)
+--d--   delete a track from the library and the file from the hard drive
+--a--   theTrack : file track -- the track to delete
+--a--   deleteFile : boolean -- true to delete the file from the hard drive
+--x--   deleteTrack(file track, true)
+to deleteTrack(theTrack, deleteFile)
 	tell application "Music"
 		set songFile to (location of theTrack)
 		set dbid to theTrack's database ID
 		delete (some track of library playlist 1 whose database ID is dbid)
 	end tell
-	tell application "Finder" to delete songFile
+	if deleteFile then
+		tell application "Finder" to delete songFile
+	end if
 end deleteTrack
 
+--c--   fixSortAlbum(theTracks, showMessage)
+--d--   fix sorting of tracks to have them in the same album
+--a--   theTracks : list of tacks -- the tracks to fix
+--a--   showMessage : boolean -- true to show a message
+--r--   list -- list of file tracks
+--x--   fixSortAlbum({file track 1, file track 2, file track 3}, true) --> {file track 1, file track 2, file track 3}
 to fixSortAlbum(theTracks, showMessage)
 	tell application "Music"
 		
@@ -670,7 +752,7 @@ to fixSortAlbum(theTracks, showMessage)
 	return theList
 end fixSortAlbum
 
-to getTrackNameProperties(strType)
+to getTrackNameProperties(strType) -- TODO
 	set strUtilities to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
 	tell strUtilities
 		set theList to {getStrNone()}
@@ -686,7 +768,8 @@ to getTrackNameProperties(strType)
 	end tell
 end getTrackNameProperties
 
-to normalizeTrackCase(theTrack)
+
+to normalizeTrackCase(theTrack) -- TODO
 	set strUtilities to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
 	
 	set normalizePlaylist to item 1 of getPlaylistByName("À Normaliser")
@@ -728,7 +811,7 @@ to normalizeTrackCase(theTrack)
 	
 end normalizeTrackCase
 
-to normalizeTracksCase(theTracks, showMessage)
+to normalizeTracksCase(theTracks, showMessage) -- TODO
 	tell application "Music"
 		set theList to {}
 		set i to 1
@@ -747,23 +830,45 @@ to normalizeTracksCase(theTracks, showMessage)
 	return theList
 end normalizeTracksCase
 
-to removeCharacters(theTracks, theKind, thePlace, theNumber)
+--c--   removeCharacters(theTracks, theKind, thePlace, theNumber)
+--d--   Remove n characters at the back or the front of tracks 
+--a--   theTracks : list of file tacks -- the tracks to get its database IDs
+--r--   list
+--x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
+to removeCharacters(theTracks, theKind, thePlace, theNumber) -- TODO : change t
 	tell application "Music"
 		repeat with theTrack in theTracks
-			if theKind is _strTrackName_ then
+			if theKind is my _strTrackName_ then
+				set theStr to name of theTrack
+			else if theKind is my _strAlbumName_ then
+				set theStr to album of theTrack
+			else if theKind is my _strArtistName_ then
+				set theStr to artist of theTrack
+			else
 				set theStr to name of theTrack
 			end if
 			tell script "String Utilities"
-				--display dialog theStr
 				set theNewStr to removeChars(theStr, thePlace, theNumber)
-				if theNewStr ≠ "" then
-					--display dialog theNewStr
-					set the name of theTrack to theNewStr
-				else
-					display dialog "Trop de chars !"
-					return
-				end if
 			end tell
+			if theNewStr ≠ "" then
+				if theKind is my _strTrackName_ then
+					set name of theTrack to theNewStr
+					set sort name of theTrack to theNewStr
+				else if theKind is my _strAlbumName_ then
+					set album of theTrack to theNewStr
+				else if theKind is my _strArtistName_ then
+					set artist of theTrack to theNewStr
+					set sort artist of theTrack to theNewStr
+					set album artist of theTrack to theNewStr
+					set sort album artist of theTrack to theNewStr
+					set sort album artist of theTrack to theNewStr
+				else
+					set name of theTrack to theNewStr
+				end if
+			else
+				display dialog "Too much chars !"
+				return
+			end if
 		end repeat
 	end tell
 end removeCharacters
@@ -1876,7 +1981,6 @@ on exportSelectedTracksToSpecificFolder(theTracks, theDestination)
 											set theDefaultItem to getItemByData(theChoicesPromptObj, "recent")
 										end tell
 										tell script "UI Utilities"
-											--set theChoice to getPromptList(theChoicesPromptObj, thePromptText, {theLabel of theDefaultItem})
 											set theChoicesPrompt to getUIItems(theChoicesPromptObj)
 										end tell
 										tell application "Music"
@@ -2081,11 +2185,71 @@ on run
 	
 	--set thePlaylists to my testGetAllTrackPlaylists()
 	
-	return my testGetChildrenRootPlaylists()
+	return my testRemoveCharacters()
 	
 end run
 
 ------- UNIT TESTS -------
+
+to testAddTrackToPlaylist()
+	set theTrack to my getCurrentTrack(false)
+	set thePlaylist to item 1 of my getPlaylistByName("TestAddToPlaylist")
+	return my addTrackToPlaylist(theTrack, thePlaylist)
+end testAddTrackToPlaylist
+
+to testSearchForASimilarTrack()
+	tell application "Music"
+		set theCurrentTrack to my getCurrentTrack(false)
+		my searchForASimilarTrack(theCurrentTrack)
+	end tell
+end testSearchForASimilarTrack
+
+to testGetAlbumTracks()
+	tell application "Music"
+		set theCurrentTrack to my getCurrentTrack(false)
+		set theTracks to my getAlbumTracks(artist of theCurrentTrack, album of theCurrentTrack)
+		set theReport to my getListReport(theTracks, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+		set theUIReport to display dialog "Albums tracks :" default answer theReport ¬
+			buttons {"OK"} with icon 1
+		return theTracks
+	end tell
+end testGetAlbumTracks
+
+to testFindDeadTracks()
+	set theTracks to my getSelectedTracks(false)
+	set theDeadTracks to my findDeadTracks(theTracks)
+	set theReport to my getListReport(theTracks, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+	tell application "Music"
+		set theUIReport to display dialog "Dead tracks :" default answer theReport ¬
+			buttons {"OK"} with icon 1
+	end tell
+end testFindDeadTracks
+
+to testGetTracksIDList()
+	set theTracks to my getSelectedTracks(false)
+	if (count of theTracks) > 0 then
+		set theIDs to my getTracksIDList(theTracks)
+		return theIDs
+	end if
+end testGetTracksIDList
+
+to testGetTracksByDBID()
+	tell application "Music"
+		set theTracks to my getTracksByDBID(my getTracksIDList(get selection))
+		return theTracks
+	end tell
+end testGetTracksByDBID
+
+to testGetTrackByDBID()
+	tell application "Music"
+		try
+			set theCurrentTrack to get current track
+			return my getTrackByDBID(database ID of theCurrentTrack)
+		on error errorMessage number errorNumber
+			display dialog errorMessage & " - errorNumber : " & errorNumber
+		end try
+	end tell
+end testGetTrackByDBID
 
 to testGetChildrenRootPlaylists()
 	set theRootPlaylists to my testRootPlaylists()
@@ -2093,14 +2257,14 @@ to testGetChildrenRootPlaylists()
 	repeat with theRootPlaylist in theRootPlaylists
 		tell application "Music"
 			if class of theRootPlaylist is folder playlist then
-				set theItem to my getChildren(theRootPlaylist)
+				set theChildren to my getChildren(theRootPlaylist)
 				--log (name of theRootPlaylist & " - " & (count of theChildren))
 				--set theChildren to theChildren of theItem
 				--repeat with theChild in theChildren
 				--log name of theRootPlaylist & " - " & theName of theChild as string
 				--end repeat
 				--log "----------"
-				copy theItem to the end of theList
+				copy theChildren to the end of theList
 			end if
 		end tell
 	end repeat
@@ -2161,12 +2325,13 @@ to testGetChoosenPlaylistFromTree()
 		--set theCount to 20
 		
 		set thePlaylistsTree to my getPlaylistsTree(thePlaylists, theCount)
-		return thePlaylistsTree
+		
 		tell script "List Utilities"
 			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
 		end tell
 		
 		set theChoice to showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
+		log theChoice
 		
 		if theChoice is not false then
 			set thePlaylist to my getChoosenPlaylist(theChoice, theFlattenPlaylists)
@@ -2192,15 +2357,53 @@ to testFixDeadTracks()
 end testFixDeadTracks
 
 to testRemoveCharacters()
-	set strUtils to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
-	set strFront to _strFront_ of strUtils
-	set strBack to _strBack_ of strUtils
-	set theTracks to getDialogTracksKind(true)
-	set theDialog to display dialog "Remove n characters from..." default answer "" buttons {"Cancel", strFront, strBack}
-	set theNumber to text returned of theDialog
-	set theButton to button returned of theDialog
-	my removeCharacters(theTracks, my _strTrackName_, theButton, theNumber)
-	my endProcess(count of theTracks)
+	tell application "Music"
+		set strUtils to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
+		set strFront to _strFront_ of strUtils
+		set strBack to _strBack_ of strUtils
+		set theTracks to my getDialogTracksKind(true)
+		if (count of theTracks) > 0 then
+			
+			set theChoicesPromptObj to {{theLabel:"Track name", theData:my _strTrackName_}, {theLabel:"Album", theData:my _strAlbumName_}, {theLabel:"Artist", theData:my _strArtistName_}}
+			set thePromptText to "Remove characters from..."
+			tell script "List Utilities"
+				set theDefaultItem to getItemByData(theChoicesPromptObj, my _strTrackName_)
+			end tell
+			tell script "UI Utilities"
+				set theChoicesPrompt to getUIItems(theChoicesPromptObj)
+			end tell
+			set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theLabel of theDefaultItem
+			if (theChoice is not false) then
+				repeat with theItem in theChoicesPromptObj
+					if theChoice as string is equal to theLabel of theItem then
+						set theKind to theData of theItem
+						exit repeat
+					end if
+				end repeat
+				-- TODO : add prop name
+				set theDialog to display dialog ("How many character(s) to remove from " & theChoice as string) & ¬
+					" ?" buttons {"Cancel", strFront, strBack} ¬
+					default answer ¬
+					"1" cancel button ¬
+					"Cancel" with icon 1
+				set theButton to button returned of theDialog
+				set theNumber to text returned of theDialog
+				my removeCharacters(theTracks, theKind, theButton, theNumber)
+				my endProcess(count of theTracks)
+			end if
+			
+			
+			
+			(*
+				set theDialog to display dialog "Remove how many characters from..." default answer "1" buttons {"Cancel", my _strTrackName_, my _strAlbumName_, my _strArtistName_} ¬
+					cancel button ¬
+					"Cancel" with icon 1
+				set theButton to button returned of theDialog
+				set theNumber to text returned of theDialog
+			*)
+			--my removeCharacters(theTracks, my _strTrackName_, theButton, theNumber)
+		end if
+	end tell
 end testRemoveCharacters
 
 to testGetAllTrackPlaylists()
