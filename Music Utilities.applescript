@@ -84,7 +84,7 @@ use AppleScript version "2.4" -- Yosemite (10.10) or later
 use scripting additions
 
 property _albumNamePropertiesList_ : {"unknown album", "album inconnu", ""}
-property _musicExtensions_ : {"MP3", "AAC", "AIFF", "WAV", "ALAC"}
+property _musicExtensions_ : {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}
 
 
 ---------------------- Retreiving ----------------------
@@ -835,7 +835,7 @@ end normalizeTracksCase
 --a--   theTracks : list of file tacks -- the tracks to get its database IDs
 --r--   list
 --x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
-to removeCharacters(theTracks, theKind, thePlace, theNumber) -- TODO : change t
+to removeCharacters(theTracks, theKind, thePlace, theNumber)
 	tell application "Music"
 		repeat with theTrack in theTracks
 			if theKind is my _strTrackName_ then
@@ -874,6 +874,7 @@ to removeCharacters(theTracks, theKind, thePlace, theNumber) -- TODO : change t
 end removeCharacters
 
 ---------- CHARACTERS END ----------
+
 
 to setTracksToFavorite(theTracks, flag)
 	repeat with theTrack in theTracks
@@ -1337,9 +1338,11 @@ Search manually ?" buttons {"Cancel", "Continue", "OK"} ¬
 		default button "OK" cancel button "Cancel" with icon 1
 	if button returned of dialogResult is "OK" then
 		set the clipboard to theName
+		set finderUtils to (load script file "Macintosh HD:Library:Script Libraries:Finder Utilities.scpt")
+		set theMusicExtensions to _musicExtensions_ of finderUtils
 		repeat while theAnswer = false
 			set theFile to choose file with prompt "Please choose a file for the track : " & my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) ¬
-				of type _musicExtensions_ ¬
+				of type theMusicExtensions ¬
 				default location thePath
 			tell script "Finder Utilities"
 				set theFileName to getFileName(theFile)
@@ -2363,7 +2366,6 @@ to testRemoveCharacters()
 		set strBack to _strBack_ of strUtils
 		set theTracks to my getDialogTracksKind(true)
 		if (count of theTracks) > 0 then
-			
 			set theChoicesPromptObj to {{theLabel:"Track name", theData:my _strTrackName_}, {theLabel:"Album", theData:my _strAlbumName_}, {theLabel:"Artist", theData:my _strArtistName_}}
 			set thePromptText to "Remove characters from..."
 			tell script "List Utilities"
@@ -2391,17 +2393,6 @@ to testRemoveCharacters()
 				my removeCharacters(theTracks, theKind, theButton, theNumber)
 				my endProcess(count of theTracks)
 			end if
-			
-			
-			
-			(*
-				set theDialog to display dialog "Remove how many characters from..." default answer "1" buttons {"Cancel", my _strTrackName_, my _strAlbumName_, my _strArtistName_} ¬
-					cancel button ¬
-					"Cancel" with icon 1
-				set theButton to button returned of theDialog
-				set theNumber to text returned of theDialog
-			*)
-			--my removeCharacters(theTracks, my _strTrackName_, theButton, theNumber)
 		end if
 	end tell
 end testRemoveCharacters

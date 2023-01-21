@@ -32,7 +32,7 @@ to flattenList(theList, theRecursiveList, theLevel)
 	end if
 	repeat with i from 1 to count of theList
 		set theItem to item i of theList
-		set theItemName to theName of theItem
+		set theItemName to name of theItem
 		set theIndent to ""
 		repeat theLevel times
 			set theIndent to theIndent & "   "
@@ -43,7 +43,7 @@ to flattenList(theList, theRecursiveList, theLevel)
 		set the end of theNewList to theItem
 		set isFolder to isFolder of theItem
 		if isFolder then
-			set theChildren to theChildren of theItem
+			set theChildren to children of theItem
 			my flattenList(theChildren, theNewList, theLevel + 1)
 		end if
 	end repeat

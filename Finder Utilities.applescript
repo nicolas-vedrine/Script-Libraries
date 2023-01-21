@@ -1,3 +1,5 @@
+property _musicExtensions_ : {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}
+
 to createFolder(thePath, folderName)
 	tell application "Finder"
 		try

@@ -3,6 +3,8 @@ use framework "Foundation"
 use scripting additions
 
 property _image_ : "public.image"
+property _text_ : "public.text"
+
 to promptFile(thePromptText, theFileType, isMultipleAllowed)
 	if (isMultipleAllowed) then
 		set theFiles to choose file with prompt thePromptText of type theFileType with multiple selections allowed
