@@ -832,7 +832,7 @@ end normalizeTracksCase
 
 --c--   removeCharacters(theTracks, theKind, thePlace, theNumber)
 --d--   Remove n characters at the back or the front of tracks 
---a--   theTracks : list of file tacks -- the tracks to get its database IDs
+--a--   theTracks : list of file tracks -- the tracks to get its database IDs
 --r--   list
 --x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
 to removeCharacters(theTracks, theKind, thePlace, theNumber)
@@ -875,19 +875,33 @@ end removeCharacters
 
 ---------- CHARACTERS END ----------
 
-
+--c--   setTracksToFavorite(theTracks, flag)
+--d--   Set the favorite flag to the tracks
+--a--   theTracks : list of tracks -- the tracks to set to favorite
+--a--   flag : boolean -- true to set to favorite or false to remove the favorite
+--x--   setTracksToFavorite({track 1, track 2, track 3}, true)
 to setTracksToFavorite(theTracks, flag)
 	repeat with theTrack in theTracks
 		my setTrackToFavorite(theTrack, flag)
 	end repeat
 end setTracksToFavorite
 
+--c--   setTrackToFavorite(theTrack, flag)
+--d--   Set the favorite flag to the track
+--a--   theTrack : track -- the track to set to favorite
+--a--   flag : boolean -- true to set to favorite or false to remove the favorite
+--x--   setTrackToFavorite(track, true)
 to setTrackToFavorite(theTrack, flag)
 	tell application "Music"
 		set loved of theTrack to flag
 	end tell
 end setTrackToFavorite
 
+--c--   setTracksNumbers(theTracks, showMessage)
+--d--   Set the number of the tracks and the count of the tracks
+--a--   theTracks : list of tracks -- the tracks to set the number
+--a--   showMessage : boolean -- true to show an end message
+--x--   setTracksNumbers({track 1, track 2, track 3}, true) --> {track 1, track 2, track 3}
 to setTracksNumbers(theTracks, showMessage)
 	tell application "Music"
 		set theTrackCount to count of theTracks
@@ -912,6 +926,11 @@ end setTracksNumbers
 
 ---------------------- Creating ----------------------
 
+--c--   createNewPlaylist(thePlaylistName)
+--d--   Create a new playlist 
+--a--   thePlaylistName : string -- the name of the playlist to create
+--r--   user playlist -- the playlist created
+--x--   createNewPlaylist("the name of the playlist") --> user playlist
 to createNewPlaylist(thePlaylistName)
 	tell application "Music"
 		set thePlaylists to (get every user playlist whose smart is false and name is equal to thePlaylistName)
@@ -929,6 +948,11 @@ end createNewPlaylist
 
 ---------- LYRICS ----------
 
+--c--   deleteTracksLyrics(theTracks, showMessage)
+--d--   delete the lyrics of the tracks
+--a--   theTracks : list of tacks -- the tracks to delete its lyrics
+--a--   showMessage : boolean -- the tracks to delete its lyrics
+--x--   deleteTracksLyrics({track 1, track 2, track 3}, true)
 to deleteTracksLyrics(theTracks, showMessage)
 	tell application "Music"
 		repeat with theTrack in theTracks
@@ -948,11 +972,11 @@ to deleteTracksLyrics(theTracks, showMessage)
 	
 end deleteTracksLyrics
 
-to downloadArtwork(theList)
+to downloadArtwork(theList) -- TODO
 	return downloadArtworkWithGoogle(theList)
 end downloadArtwork
 
-to downloadArtworkWithGoogle(theList)
+to downloadArtworkWithGoogle(theList) -- TODO
 	set theArgs to ""
 	set listCount to count of theList
 	set i to 1
@@ -979,6 +1003,12 @@ to downloadArtworkWithGoogle(theList)
 	return theAutomatorEncodeScript
 end downloadArtworkWithGoogle
 
+--c--   removeArtworks(theTracks, showMessage)
+--d--   Remove all the artworks of the tracks
+--a--   theTracks : list of tracks -- the tracks to remove the artworks
+--a--   showMessage : boolean -- true to show an end message
+--r--   list of tracks
+--x--   removeArtworks({track 1, track 2, track 3}, true) --> {track 1, track 2, track 3}
 to removeArtworks(theTracks, showMessage)
 	tell application "Music"
 		repeat with theTrack in theTracks
@@ -996,6 +1026,12 @@ to removeArtworks(theTracks, showMessage)
 	return theTracks
 end removeArtworks
 
+--c--   setTracksArtworks(theTracks, theArtworks)
+--d--   Set artworks to tracks
+--a--   theTracks : list of tracks -- The tracks to set the artworks
+--a--   theArtworks : list of artworks -- The artworks to set to the tracks
+--r--   list of tracks
+--x--   removeArtworks({track 1, track 2, track 3}, {artwork 1, artwork 2}) --> {track 1, track 2, track 3}
 to setTracksArtworks(theTracks, theArtworks)
 	tell application "Music"
 		repeat with theTrack in theTracks
@@ -1014,6 +1050,11 @@ to setTracksArtworks(theTracks, theArtworks)
 	return theTracks
 end setTracksArtworks
 
+--c--   trackHasArtwork(theTrack)
+--d--   True if has artwork, false if not.
+--a--   theTrack : track -- The track to know if it has an artwork
+--r--   boolean
+--x--   trackHasArtwork(track) --> true
 on trackHasArtwork(theTrack)
 	tell application "Music"
 		set artworkCount to count of artwork of theTrack
@@ -1026,7 +1067,7 @@ on trackHasArtwork(theTrack)
 	end tell
 end trackHasArtwork
 
-to getTracksWithSameArtworkThanTheSelectedTrack(theTrack, showMessage)
+to getTracksWithSameArtworkThanTheSelectedTrack(theTrack, showMessage) -- TODO
 	set thePlaylist to item 1 of getPlaylistByName("Avec pochette")
 	
 	tell application "Music"
@@ -1041,7 +1082,7 @@ to getTracksWithSameArtworkThanTheSelectedTrack(theTrack, showMessage)
 		set theList to {}
 		set i to 1
 		repeat with theItem in theTracks
-			my showProgress(i, count of theTracks, "in progress...", my getFormattedTrackName(theItem, my _formatedTrackNameTrackNameArtistNameAlbumName_), "")
+			my showProgress(i, count of theTracks, "In progress...", my getFormattedTrackName(theItem, my _formatedTrackNameTrackNameArtistNameAlbumName_), "")
 			if theItem is not theTrack then
 				try
 					set theArtworks to every artwork of theItem
@@ -1086,6 +1127,13 @@ property _fixTrackLocationTrackFound_ : "1"
 property _fixTrackLocationMoreThanOneTrack_ : "2"
 property _fixTrackLocationTrackNotFound_ : "3"
 
+--c--   fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
+--d--   Fix the dead track (! symbol) by looking for the files in paths and copy it in a lost and found folder
+--a--   theTracks : list of file tracks -- the tracks to fix
+--a--   thePrimaryPath : string -- the path to the first folder to find the files
+--a--   theSecondaryPath : string -- the path to the second folder to find the files
+--r--   list -- the list of records of the different lists of the result
+--x--   fixDeadTracks({file track 1, file track 2, file track 3, file track 4}, "/Volumes/VOYAGEUR/iTunes/Musique/", "/Volumes/music/Musique/", "/Volumes/VOYAGEUR/iTunes/Find/") --> {{itemsFound:{file track 1, file track 3}, itemsNotFound:{file track 2, file track 5}, itemsAlreadyFound:{file track 6, file track 7, file track 8}}}
 to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	--display dialog "fixDeadTracks"
 	log "fixDeadTracks : thePrimaryPath = " & thePrimaryPath & " theSecondaryPath = " & theSecondaryPath & " theFindFolder = " & theFindFolder
@@ -1173,7 +1221,16 @@ to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	return theResult
 end fixDeadTracks
 
+--c--   fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
+--d--   Fix the location of a track. If more than one track is returned then the user could select the file.
+--a--   theTrack : file track -- the track to fix its location.
+--a--   theReturnedList : list -- List of the result returned by a spotlight search.
+--a--   thePath : string -- The path where the file was found. If the path is different than the primary path, the file will be copied to the lost and found folder.
+--a--   theDestination : string -- The path to copy the found file.
+--r--   number -- a number to return to know what happened. See _fixTrackLocationTrackFound_, _fixTrackLocationNotTrackPath_, _fixTrackLocationMoreThanOneTrack_ or _fixTrackLocationTrackNotFound_ properties.
+--x--   fixTrackLocation(file track, {"/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun.mp3", "/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun (if the homies cant have none) (feat. nate dogg, warren g & kurupt)_MacBook-Air.local_Jun-03-175241-2021_CaseConflict.mp3"}, "/Volumes/music/Musique/", "/Volumes/VOYAGEUR/iTunes/Find/") --> 1
 on fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
+	--display dialog theDestination as string
 	tell application "Music"
 		log "fixTrackLocation"
 		set thePlaylist to item 1 of my getPlaylistByName("Find Dead Tracks")
@@ -1243,7 +1300,14 @@ on fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 	end tell
 end fixTrackLocation
 
+--c--   spotlightTrack(theTrack, thePath)
+--d--   Do a search for file track in a patch with spotlight
+--a--   theTrack : file track -- the track to search
+--a--   thePath : string -- the path to look for the track
+--r--   list -- The list of files found.
+--x--   spotlightTrack(file track, "/Volumes/VOYAGEUR/iTunes/Musique/") --> {"/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun.mp3", "/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun (if the homies cant have none) (feat. nate dogg, warren g & kurupt)_MacBook-Air.local_Jun-03-175241-2021_CaseConflict.mp3"}
 on spotlightTrack(theTrack, thePath)
+	--display dialog thePath
 	log "spotlightTrack"
 	set theSpecialChars to {"/", "\"", "?"}
 	tell application "Music"
@@ -1277,6 +1341,12 @@ on spotlightTrack(theTrack, thePath)
 	return theFinalList
 end spotlightTrack
 
+--c--   spotlightQuery(thePath, theSpotlightQueryParams)
+--d--   Perform a spotlight search with formatted paramaters.
+--a--   thePath : file track -- the track to search
+--a--   theSpotlightQueryParams : list of records -- The list of parameters to perform the spotlight search (like {{name:"kMDItemFSName", value:theName}}).
+--r--   list -- The list of files found.
+--x--   spotlightTrack("/Volumes/music/Musique/", {{name:"kMDItemFSName", value:"no fun"}}) --> {"/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun.mp3", "/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun (if the homies cant have none) (feat. nate dogg, warren g & kurupt)_MacBook-Air.local_Jun-03-175241-2021_CaseConflict.mp3"}
 on spotlightQuery(thePath, theSpotlightQueryParams)
 	set theCommand to "mdfind -onlyin " & quoted form of thePath & ""
 	set theSpecialChars to {"_", "&", "'", "$", ":", "`"}
@@ -1314,11 +1384,11 @@ on spotlightQuery(thePath, theSpotlightQueryParams)
 		set theReturnedList to (do shell script theCommand)
 		set theFormattedReturnedList to theReturnedList's paragraphs
 		log "spotlightQuery : count of theFormattedReturnedList = " & (count of theFormattedReturnedList)
-		(*
-			repeat with theItem in theFormattedReturnedList
-				log "spotlightQuery : item of theFormattedReturnedList = " & (theItem as string)
-			end repeat
-		*)
+		
+		repeat with theItem in theFormattedReturnedList
+			log "spotlightQuery : item of theFormattedReturnedList = " & (theItem as string)
+		end repeat
+		
 		tell script "List Lib"
 			set theFormattedReturnedList to sortList(theFormattedReturnedList)
 		end tell
@@ -1329,6 +1399,12 @@ on spotlightQuery(thePath, theSpotlightQueryParams)
 	end try
 end spotlightQuery
 
+--c--   chooseFileManually(theTrack, thePath)
+--d--   Choose a file manually to fix the location of a track when no automatic search succeed.
+--a--   theTrack : file track -- the track to change its location manually
+--a--   thePath : string -- the path to set the choose file to look for the track
+--r--   string -- The path of the choosen file.
+--x--   chooseFileManually(file track, "/Volumes/music/Musique/Media.localized/Music/") --> "/Volumes/music/Musique/Media.localized/Music/Snoop Dogg/Essentials/09 ain't no fun.mp3"
 on chooseFileManually(theTrack, thePath)
 	set theAnswer to false
 	set theName to name of theTrack
@@ -1399,6 +1475,11 @@ to getMostFamousPlaylists()
 	
 end getMostFamousPlaylists
 
+--c--   convertFileTracks(theFileTracks)
+--d--   Convert the file tracks to the default convert Music setting
+--a--   theFileTracks : file tracks -- The file tracks to convert.
+--r--   list -- List of file tracks.
+--x--   convertFileTracks({file track 1, file track 2, file track 3}) --> {file track 1, file track 2, file track 3}
 to convertFileTracks(theFileTracks)
 	with timeout of 86400 seconds
 		tell application "Music"
@@ -1413,16 +1494,28 @@ property _strTrackName_ : "trackName"
 property _strArtistName_ : "artistName"
 property _strAlbumName_ : "albumName"
 
+--c--   getStrTrackName() -- TODO - To deprecated.
+--d--   Return the _strTrackName_ property.
+--r--   string -- The _strTrackName_ property.
+--x--   getStrTrackName() --> "trackName"
 to getStrTrackName()
 	set theStr to _strTrackName_
 	return theStr
 end getStrTrackName
 
+--c--   getStrArtistName() -- TODO - To deprecated.
+--d--   Return the _strArtistName_ property.
+--r--   string -- The _strArtistName_ property.
+--x--   getStrTrackName() --> "artistName"
 to getStrArtistName()
 	set theStr to _strArtistName_
 	return theStr
 end getStrArtistName
 
+--c--   getStrAlbumName() -- TODO - To deprecated.
+--d--   Return the _strAlbumName_ property.
+--r--   string -- The _strAlbumName_ property.
+--x--   getStrTrackName() --> "albumName"
 to getStrAlbumName()
 	set theStr to _strAlbumName_
 	return theStr
@@ -1452,7 +1545,14 @@ to getAlbumNamePropertiesList()
 	return albumNamePropertiesList
 end getAlbumNamePropertiesList
 
-to showProgress(current, total, strDescription, strAdditionalDescription)
+--c--   showProgress(current, total, strDescription, strAdditionalDescription)
+--d--   Show the progression of a task.
+--a--   current : integer -- The current index of a task.
+--a--   total : integer -- The total index of a task.
+--a--   strDescription : string -- A string to describe the current task
+--a--   strAdditionalDescription : string -- A string to describe an additional description.
+--x--   showProgress(2, 15, "In progress...", "")
+to showProgress(current, total, strDescription, strAdditionalDescription) -- TODO To move.
 	tell script "UI Utilities"
 		showProgress(current, total, current & " / " & total & " - " & strDescription, strAdditionalDescription)
 	end tell
@@ -2169,7 +2269,7 @@ end setMissingTracksToJukeBoxPlaylist
 
 on run
 	
-	--my testFixDeadTracks()
+	return my testFixDeadTracks()
 	
 	(*
 		set thePlaylist to my testGetChoosenPlaylist()
@@ -2357,6 +2457,8 @@ to testFixDeadTracks()
 	set the clipboard to theReport
 	--set theUIReport to display dialog "Tracks not found :" default answer theReport with icon note buttons {"OK"}
 	my showReport("items found.", count of itemsFound of theResult, count of theTracks)
+	
+	return theResult
 end testFixDeadTracks
 
 to testRemoveCharacters()
