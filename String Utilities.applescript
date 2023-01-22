@@ -327,5 +327,17 @@ to testLongestPart()
 end testLongestPart
 
 on run
-	return my trim("    C'o-Pilot    ")
+	--return my trim("    C'o-Pilot    ")
+	tell application "Finder"
+		set theMe to get path to me
+		
+		set theParent to container of the result as string
+		set theScript to theParent & "Music Utilities.scpt"
+		log theScript
+		set musicUtilities to (load script file theScript)
+		return (musicUtilities)
+		-- Or just get the name of the Parent Container like;
+		--set b to name of a
+		--return b
+	end tell
 end run
