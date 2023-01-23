@@ -3,6 +3,7 @@ property _strUpper_ : "upper"
 property _strCapitalize_ : "capitalize"
 property _strSentence_ : "sentence"
 property _strMixed_ : "mixed"
+property _strCamelCase_ : "camelCase"
 property _strNone_ : "none"
 property _strBack_ : "Back"
 property _strFront_ : "Front"
@@ -65,6 +66,15 @@ to changeCase of someText to caseType
 			return capitalizeWords(someText)
 		else if (caseType is equal to my _strSentence_) then
 			return capitalizeSentences(someText)
+		else if (caseType is equal to my _strCamelCase_) then
+			set theText to ""
+			set theWord1 to word 1 of someText
+			set theWord1Lowered to lowerString(theWord1)
+			set theText to theText & theWord1Lowered
+			set theWords to my removeChars(someText, my _strFront_, (count of theWord1))
+			set theWords to capitalizeWords(theWords)
+			set theText to theText & theWords
+			return theText
 		else
 			return someText
 		end if
@@ -326,18 +336,41 @@ to testLongestPart()
 	return theLongestPart
 end testLongestPart
 
-on run
-	--return my trim("    C'o-Pilot    ")
+property _fileAndFolderLib_ : "File and Folder Lib.scpt"
+property _finderUtilities_ : "Finder Utilities.scpt"
+property _listLib_ : "List Lib.scpt"
+property _listUtilities_ : "List Utilities.scpt"
+property _mathUtilities_ : "Math Utilities.scpt"
+property _mediaUtilities_ : "Media Utilities.scpt"
+property _musicUtilities_ : "Music Utilities.scpt"
+property _numberLib_ : "Number Lib.scpt"
+property _renameWebFriendly_ : "Rename Web Friendly.scpt"
+property _stringLib_ : "String Lib.scpt"
+property _stringUtilities_ : "String Utilities.scpt"
+property _timeUtilities_ : "Time Utilities.scpt"
+property _uiUtilities_ : "UI Utilities.scpt"
+property _xmlUtilities_ : "XML Utilities.scpt"
+
+on loadScriptFromLibrary(theScriptName)
 	tell application "Finder"
 		set theMe to get path to me
-		
 		set theParent to container of the result as string
-		set theScript to theParent & "Music Utilities.scpt"
-		log theScript
-		set musicUtilities to (load script file theScript)
-		return (musicUtilities)
-		-- Or just get the name of the Parent Container like;
-		--set b to name of a
-		--return b
+		set theScriptPath to theParent & theScriptName
+		set theScript to (load script file theScriptPath)
+		return theScript
 	end tell
+end loadScriptFromLibrary
+
+on run
+	--return my trim("    C'o-Pilot    ")
+	(*
+		tell application "Finder"
+			set theScript to my loadScriptFromLibrary(my _listLib_)
+			return (myName of theScript)
+		end tell
+	*)
+	set theText to "String Utilities return "
+	set theTextCamelCased to changeCase of (my removeLastSpace(my formatSpace(theText))) to my _strCamelCase_
+	set theFinalText to my replaceChars(theTextCamelCased, " ", "")
+	return theFinalText
 end run
