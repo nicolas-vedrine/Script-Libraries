@@ -10,6 +10,8 @@
 
 The Music Utilities contains a bunch of functions to search, retreive and manipulate tracks, playlists in the Music Library
 
+--d-- Last modification date:                                                             25/01/2023
+
 --------------------------- LIST OF FUNCTIONS ---------------------------
 
 
@@ -143,7 +145,7 @@ to getDBIDTracks(theTracks)
 		set theTracksList to {}
 		set i to 1
 		repeat with theTrack in theTracks
-			my showProgress(i, length of theTracks, "", "")
+			my showProgress(i, length of theTracks, "Getting tracks ID", my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
 			set dbid to database ID of the theTrack
 			set theDBTrack to (some track of library playlist 1 whose database ID is dbid)
 			copy theDBTrack to the end of theTracksList
@@ -278,7 +280,7 @@ to getPlaylistsTree(thePlaylists, theLength)
 					tell script "List Lib"
 						set theIndex to findFirst(thePlaylistList, thePlParentID)
 						set theParentItem to item theIndex of theList
-						set theChildren to theChildren of theParentItem
+						set theChildren to children of theParentItem
 						set theItem to my getTreeItem(thePl)
 						set the end of theChildren to theItem
 					end tell
@@ -297,7 +299,7 @@ to getPlaylistsTree(thePlaylists, theLength)
 					tell script "List Lib"
 						set theIndex to findFirst(thePlaylistList, thePlParentID)
 						set theParentItem to item theIndex of theList
-						set theChildren to theChildren of theParentItem
+						set theChildren to children of theParentItem
 						set theItem to my getTreeItem(thePl)
 						set the end of theChildren to theItem
 					end tell
@@ -341,12 +343,12 @@ to getTreeItem(thePlaylist)
 		else
 			set isSmart to false
 		end if
-		if isFolder then
-			set theItem to {theName:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount, theChildren:{}}
-		else
-			set theItem to {theName:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount}
-		end if
 	end tell
+	if isFolder then
+		set theItem to {name:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount, children:{}}
+	else
+		set theItem to {name:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount}
+	end if
 	return theItem
 end getTreeItem
 
@@ -1558,17 +1560,23 @@ to showProgress(current, total, strDescription, strAdditionalDescription) -- TOD
 	end tell
 end showProgress
 
-on checkIfMaxSize(thePlaylist, theMaxSize)
+--c--   checkIfMaxSize(thePlaylist, theMaxSize)
+--d--   To know if a playlist exceed a limit.
+--a--   thePlaylist : playlist -- The current index of a task.
+--a--   theMaxSize : integer -- Size in MB.
+--r--   boolean : true if exceed, false if not.
+--x--   checkIfMaxSize(playlist, 700) --> true
+on checkIfMaxSize(thePlaylist, theMaxSize) -- TODO --> bug with playlist with more than 1000mo
 	tell application "Music"
 		set isMaxSize to false
 		set playlistSize to (size of thePlaylist)
 		--display dialog "toto" & playlistSize as string
 		set sizeOfThePlaylist to 0
 		if playlistSize is greater than 0 then
-			set sizeOfThePlaylist to my convertByteSize(playlistSize, 1024, 1) as number
+			set sizeOfThePlaylist to my convertByteSize(playlistSize, 1024, 2) as number
 		end if
-		log sizeOfThePlaylist
-		log theMaxSize
+		log "checkIfMaxSize : sizeOfThePlaylist = " & sizeOfThePlaylist
+		log "checkIfMaxSize : theMaxSize = " & theMaxSize
 		return sizeOfThePlaylist is greater than theMaxSize
 	end tell
 end checkIfMaxSize
@@ -1614,21 +1622,27 @@ to moveTracksToLastJukeBoxPlaylist()
 	end if
 end moveTracksToLastJukeBoxPlaylist
 
-on isCompilation(theTracks)
+--c--   isCompilation(theTracks)
+--d--   Show the progression of a task.
+--a--   theTracks : list -- list of tracks.
+--r--   boolean : true or false -- true if is a compilation, false if not.
+--x--   isCompilation({track 1, track 2, track 3, track 4}) --> true
+on isCompilation(theTracks) -- TODO --> to check...
 	tell application "Music"
-		set isComplitation to false
+		set theIsComplitation to false
 		set theAlbumName to ""
 		repeat with theTrack in theTracks
 			set albumArtist to album of theTrack
 			
 			if (theAlbumName is not equal to "" and theAlbumName is not equal to albumArtist) then
-				set isComplitation to true
+				set theIsComplitation to true
+				log "isCompilation : " & theIsComplitation
 			end if
 			
 			set theAlbumName to albumArtist
 			
 		end repeat
-		return isComplitation
+		return theIsComplitation
 	end tell
 end isCompilation
 
@@ -1639,6 +1653,10 @@ on convertByteSize(byteSize, KBSize, decPlaces)
 	end tell
 end convertByteSize
 
+--c--   showMessage(theMessage)
+--d--   Show a message with default parameters.
+--a--   theMessage : string -- The message to show.
+--x--   showMessage("This is a message.")
 to showMessage(theMessage)
 	tell application "Music"
 		display dialog theMessage buttons {"OK"} ¬
@@ -1647,8 +1665,15 @@ to showMessage(theMessage)
 	end tell
 end showMessage
 
-
 property _FilteredPlaylistName_ : "Filtered"
+
+--c--   filterPlaylist(thePlaylist, theKeyword, theField)
+--d--   Filter the tracks of a playlist with a keyword and get the results.
+--a--   thePlaylist : playlist -- The playlist to filter.
+--a--   theKeyword : string -- The keyword to search.
+--a--   theField : string -- The field to search (track name, artist or album (see _strTrackName_, _strArtistName_ and _strAlbumName_ properties))
+--r--   list : list of file tracks -- The tracks filtered.
+--x--   filterPlaylist(playlist, "dog", "trackName") --> {file track 1, file track 2, file track 3, file track 4}
 on filterPlaylist(thePlaylist, theKeyword, theField)
 	tell application "Music"
 		if theField is equal to my _strTrackName_ then
@@ -1662,49 +1687,63 @@ on filterPlaylist(thePlaylist, theKeyword, theField)
 	end tell
 end filterPlaylist
 
+--c--   isInPlaylist(theTrack, thePlaylist)
+--d--   To know if a track in a playlist.
+--a--   theTrack : track -- The track to know.
+--a--   thePlaylist : playlist -- The playlist to look for the track.
+--r--   boolean : true or false -- True if is in the playlist, false if not.
+--x--   isInPlaylist(track, playlist) --> true
 on isInPlaylist(theTrack, thePlaylist)
 	tell application "Music"
 		try
 			set thePersistentID to persistent ID of theTrack
-			set theResults to (every file track of thePlaylist whose persistent ID is thePersistentID)
-			set theCount to count of theResults
-			if theCount is equal to 0 then
-				return false
-			else
-				return true
-			end if
+			set theResults to (every track of thePlaylist whose persistent ID is thePersistentID)
+			return (count of theResults) > 0
 		on error
 			display dialog "isInPlaylist : name = " & (name of theTrack) & " -- " & name of thePlaylist
+			return false
 		end try
-		
-		return false
-		
 	end tell
 end isInPlaylist
 
-to getChooseList(theList, isMultipleSelections)
+--c--   getChooseList(theTracks, isMultipleSelections)
+--d--   Get a choose from list UI with a list of tracks.
+--a--   theTracks : tracks -- The tracks.
+--a--   isMultipleSelections : boolean -- true if a multiple selection is allowed, false if not.
+--r--   list : list -- List of tracks selected.
+--x--   getChooseList({track 1, track 2, track 3, track 4, track 5}, true) --> {track 1, track 2}
+to getChooseList(theTracks, isMultipleSelections)
 	set theListToDisplay to {}
 	set i to 1
-	repeat with theTrack in theList
+	repeat with theTrack in theTracks
 		set theStr to getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_)
 		set theObj to {(i as string) & " - " & theStr}
 		copy theObj to the end of theListToDisplay
 		set i to (i + 1)
 	end repeat
 	
-	set theStrPrompt to (((count of theList) & " items. Please make your selection :") as string)
-	if (isMultipleSelections) then
-		set theChoice to choose from list theListToDisplay with prompt theStrPrompt with multiple selections allowed
-	else
-		set theChoice to choose from list theListToDisplay with prompt theStrPrompt without multiple selections allowed
-	end if
+	set theStrPrompt to (((count of theTracks) & " items. Please make your selection :") as string)
+	
+	tell application "Music"
+		if (isMultipleSelections) then
+			set theChoice to choose from list theListToDisplay with prompt theStrPrompt with multiple selections allowed
+		else
+			set theChoice to choose from list theListToDisplay with prompt theStrPrompt without multiple selections allowed
+		end if
+	end tell
 	
 	return theChoice
 	
 end getChooseList
 
-property _formatedTrackNameTrackNameArtistNameAlbumName_ : "1"
+property _formatedTrackNameTrackNameArtistNameAlbumName_ : 1
 
+--c--   getFormattedTrackName(theTrack, theStyle)
+--d--   Format a track with a style. The most common is 'title' by 'artist' in 'album'.
+--a--   theTrack : track -- The track to format.
+--a--   theStyle : integer -- The property to format the track.
+--r--   string  -- The formatted track.
+--x--   getFormattedTrackName(track, my _formatedTrackNameTrackNameArtistNameAlbumName_) --> "'the have nots' by 'HOUSE OF PAIN' in 'Truth Crushed To Earth Shall Rise Again'"
 on getFormattedTrackName(theTrack, theStyle)
 	tell application "Music"
 		set str to ""
@@ -1713,7 +1752,6 @@ on getFormattedTrackName(theTrack, theStyle)
 			set trackName to name of theTrack
 			set artistName to artist of theTrack
 			set albumName to album of theTrack
-			--set str to (theID as string) & " - "
 			if theStyle is _formatedTrackNameTrackNameArtistNameAlbumName_ then
 				set str to str & ("'" & trackName & "'" & " by " & "'" & artistName & "'" & " in '" & my getFormattedAlbumName(albumName) & "'")
 			end if
@@ -1724,9 +1762,14 @@ on getFormattedTrackName(theTrack, theStyle)
 	return str
 end getFormattedTrackName
 
+--c--   getFormattedAlbumName(albumName)
+--d--   Format the album name of a track. No format if album name exists, unknown album if not.
+--a--   albumName : string -- The album name.
+--r--   string  -- The formatted album name.
+--x--   getFormattedAlbumName("") --> "unknown album"
 on getFormattedAlbumName(albumName)
 	if (albumName = "") then
-		return item 1 of my _albumNamePropertiesList_
+		return item 1 of my _albumNamePropertiesList_ -- TODO get the OS language
 	else
 		return albumName
 	end if
@@ -1740,6 +1783,12 @@ on isInMusicBox(theTrack)
 	end tell
 end isInMusicBox
 
+--c--   isAlbumsArtistAlreadyExists(theArtist, theAlbum)
+--d--   Return a boolean to know if an album of an artist is already in the library.
+--a--   theArtist : string -- The artist name.
+--a--   theAlbum : string -- The album name.
+--r--   boolean : true or false -- true if the album is already in the library, false if not.
+--x--   isAlbumsArtistAlreadyExists("", theAlbum) --> "unknown album"
 to isAlbumsArtistAlreadyExists(theArtist, theAlbum)
 	tell application "Music"
 		set theTracks to get every track where the artist is theArtist and album is theAlbum
@@ -1754,6 +1803,7 @@ end isAlbumsArtistAlreadyExists
 
 ---------- ARTWORKS ----------
 
+------ FROM DOUG'S SCRIPTS. THX BRO ! ------
 -- you may want to experiment with these properties to refine your searches!
 property limit_to_size : true --if set to true, will only serch for images described in image_size
 property image_size : "large" --can be 'icon' 'small' 'medium' 'large'
@@ -1763,6 +1813,10 @@ property search_domain : "amazon.com" --search for images only in a certain doma
 -- you probably don't want to change anything below here
 property search_URL : "http://images.google.com/images?hl=en&btnG=Google+Search&q="
 
+--c--   findAlbumArtworkWithGoogle(theTrack)
+--d--   Find a track artwork with Google. Open the result in a Safari window.
+--a--   theTrack : track -- The track.
+--x--   findAlbumArtworkWithGoogle(track)
 to findAlbumArtworkWithGoogle(theTrack)
 	tell application "Music"
 		set this_track to theTrack
@@ -1846,6 +1900,12 @@ end findAlbumArtworkWithGoogle
 
 property _APIHerokuAppURL_ : "https://lyric-api.herokuapp.com/api/find/"
 property _isNoRemember_ : false
+
+--c--   setTracksLyricsWithAPIHerokuApp(theTracks)
+--d--   Set the lyrics of tracks with the Heroku API
+--a--   theTracks : list -- List of tracks.
+--r--   list  -- List of tracks where the lyrics were set.
+--x--   setTracksLyricsWithAPIHerokuApp({track 1, track 2, track 3, track 4}) --> {track 1, track 2}
 to setTracksLyricsWithAPIHerokuApp(theTracks)
 	tell application "Music"
 		set theList to {}
@@ -1864,6 +1924,11 @@ to setTracksLyricsWithAPIHerokuApp(theTracks)
 	end tell
 end setTracksLyricsWithAPIHerokuApp
 
+--c--   setTrackLyricsWithAPIHerokuApp(theTrack)
+--d--   Set the lyrics of a track with the Heroku API
+--a--   theTrack : track -- the track.
+--r--   boolean : true or false  -- True if the lyrics is set, false if not.
+--x--   setTrackLyricsWithAPIHerokuApp(track) --> true
 to setTrackLyricsWithAPIHerokuApp(theTrack)
 	tell application "Music"
 		
@@ -1889,7 +1954,14 @@ to setTrackLyricsWithAPIHerokuApp(theTrack)
 	end tell
 end setTrackLyricsWithAPIHerokuApp
 
-to setTrackLyrics(theArtist, theName, isFirstAttempt)
+--c--   setTrackLyrics(theArtist, theName, isFirstAttempt)
+--d--   Set the track's lyrics with Heroku API. If the lyrics are not found, a dialog is shown to type some new string. Finally, a copy / paste of the lyrics can be done.
+--a--   theArtist : string -- The artist name.
+--a--   theName : string -- The track name.
+--a--   isFirstAttempt : boolean -- True if it is the first attempt to get the lyrics, false if not.
+--r--   string  -- The track's lyrics.
+--x--   setTrackLyrics("iron maiden", "the trooper", true) --> "unknown album"
+to setTrackLyrics(theArtist, theName, isFirstAttempt) -- TODO --> to check
 	set theLyrics to my getTrackLyricsWithAPIHerokuApp(theArtist, theName)
 	if (theLyrics is not equal to "error" and theLyrics is not equal to "") then
 		return theLyrics
@@ -1966,6 +2038,7 @@ to setTrackLyrics(theArtist, theName, isFirstAttempt)
 	end if
 end setTrackLyrics
 
+
 to getTrackLyricsWithAPIHerokuApp(theArtist, theName)
 	tell application "JSON Helper"
 		set theURL to my _APIHerokuAppURL_ & theArtist & "/" & theName
@@ -1984,6 +2057,13 @@ end getTrackLyricsWithAPIHerokuApp
 
 ---------------------- Exporting ----------------------
 
+--c--   exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
+--d--   Export a file track to a folder with the artist/album/track format.
+--a--   theFileTrack : string -- The POSX path of the file track's location.
+--a--   theDestination : string -- The POSX path of the destination folder.
+--a--   replaceFile : boolean -- True if the file must be replaced, false if not.
+--r--   string  -- The POSX path of the copied file in the destination.
+--x--   exportFileToSpecificFolder("/Volumes/VOYAGEUR/iTunes/Musique/Media.localized/Music/ENHANCER/Street Trash/21 mega squatt.mp3", "/Volumes/VOYAGEUR/conmeubonailleuco/Temporaire/Zik Export/", true) --> "/Volumes/VOYAGEUR/conmeubonailleuco/Temporaire/Zik Export/ENHANCER/Street Trash/21 mega squatt.mp3"
 to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 	log "exportFileToSpecificFolder : theFileTrack = " & theFileTrack as string
 	tell script "Finder Utilities"
@@ -2042,7 +2122,13 @@ to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 	return ""
 end exportFileToSpecificFolder
 
-on exportSelectedTracksToSpecificFolder(theTracks, theDestination)
+--c--   exportSelectedTracksToSpecificFolder(theTracks, theDestination)
+--d--   Export tracks to a specific folder. If the track already exists in the destination, it could be overwritten with options.
+--a--   theTracks : list -- List of file tracks to export.
+--a--   theDestination : alias -- the alias path of the folder.
+--r--   list  -- List of records : theList for the exported files and theErrorList for the error files.
+--x--   exportSelectedTracksToSpecificFolder({file track 1, file track 2, file track 3}, an alias) --> {theList:{file track 1, file track 3, file track 5}, theErrorList:{file track 2, file track 4}}
+on exportSelectedTracksToSpecificFolder(theTracks, theDestination) -- TODO --> fix the export format bug (Music - ACE OF BASE - Happy Nation).
 	tell application "Music"
 		if theDestination is not "" then
 			if (not my checkIfDestinationHasEnoughSpace(theTracks, theDestination)) then
@@ -2156,11 +2242,19 @@ on exportSelectedTracksToSpecificFolder(theTracks, theDestination)
 	end tell
 end exportSelectedTracksToSpecificFolder
 
+--c--   checkIfDestinationHasEnoughSpace(theTracks, theDestination)
+--d--   Check if some tracks could be exported in a destination.
+--a--   theTracks : list -- list of tracks.
+--a--   theDestination : alias -- the alias path of the folder.
+--r--   boolean -- True if has enough space, false if not.
+--x--   checkIfDestinationHasEnoughSpace(theTracks, theDestination) --> {file track 1, file track 2, file track 3, file track 4}
 to checkIfDestinationHasEnoughSpace(theTracks, theDestination)
 	tell application "Music"
 		set theList to {}
 		set theMissingList to {}
+		set i to 0
 		repeat with theTrack in theTracks
+			my showProgress(i, length of theTracks, "Getting tracks location", my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
 			if (class of theTrack is not shared track) then
 				set theFileTrack to (the location of theTrack)
 				if theFileTrack is not missing value then
@@ -2169,6 +2263,7 @@ to checkIfDestinationHasEnoughSpace(theTracks, theDestination)
 					copy theTrack to the end of theMissingList -- to use later
 				end if
 			end if
+			set i to i + 1
 		end repeat
 	end tell
 	tell script "Finder Utilities"
@@ -2178,6 +2273,10 @@ end checkIfDestinationHasEnoughSpace
 
 ---------------------- UI Display ----------------------
 
+--c--   endProcess(countTracks)
+--d--   Display a basic message with the count of tracks processed.
+--a--   countTracks : integer -- The number of tracks.
+--x--   endProcess(154)
 to endProcess(countTracks)
 	tell application "Music"
 		display dialog "Process terminé pour " & countTracks & " tracks" buttons {"OK"} ¬
@@ -2186,13 +2285,24 @@ to endProcess(countTracks)
 	end tell
 end endProcess
 
-to getChoiceList(theList, theLevel)
+--c--   getChoiceList(theList, theLevel)
+--d--   Get a formatted item list from a list items.
+--a--   theList : list of records -- the list items.
+--r--   list of string -- the list of formatted items
+--x--   getChoiceList({{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37060, theLabel:" Bibliothèque"}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8, theLabel:" Clips vidéo"}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37060, theLabel:" Musique"} }) --> {"1 -  Bibliothèque (37060 tracks)", "2 -  Clips vidéo (8 tracks)", "Musique (37060 tracks)"}
+to getChoiceList(theList)
 	set theChoiceList to {}
 	repeat with i from 1 to count of theList
 		set theItem to item i of theList
+		if i = 3 then
+			--			log "getChoiceList = theItem : " & theItem as string
+		end if
 		set theLabel to theLabel of theItem
 		set theLabel to i & " - " & theLabel & " (" & theCount of theItem & " tracks)"
-		set the end of theChoiceList to (theLabel) as string
+		if i = 3 then
+			log "getChoiceList = theLabel : " & theLabel as string
+		end if
+		set the end of theChoiceList to theLabel as string
 	end repeat
 	return theChoiceList
 end getChoiceList
@@ -2202,6 +2312,12 @@ to showMessageProcess(countTracks)
 	my endProcess(countTracks)
 end showMessageProcess
 
+--c--   showReport(theText, theCount, theTotal)
+--d--   Show a message with a ratio report.
+--a--   theText : string -- The text to show.
+--a--   theCount : integer -- the count of the success.
+--a--   theTotal : integer -- the total of the process.
+--x--   showReport("files processed.", theCount, theTotal)
 to showReport(theText, theCount, theTotal)
 	tell script "Math Utilities"
 		set thePercent to getPercent(theCount, theTotal)
@@ -2217,12 +2333,22 @@ to showReport(theText, theCount, theTotal)
 	showMessage(theMessage)
 end showReport
 
+--c--   getListReport(theTracks, theFormat)
+--d--   Return a report from the tracks processed.
+--a--   theTracks : list -- The list of tracks.
+--a--   theFormat : integer -- The format of the tracks. See _formatedTrackNameTrackNameArtistNameAlbumName_ property.
+--r--   string  -- The report.
+--x--   getListReport({track 1, track 2, track 3}, 1) --> "'the springs' by 'A' in 'Hi-Fi Serious'
+--'shut yer face' by 'A' in 'Hi-Fi Serious'
+--'pacific ocean blue' by 'A' in 'Hi-Fi Serious'"
 to getListReport(theTracks, theFormat)
 	set theText to ""
 	set i to 0
 	set theCount to count of theTracks
 	repeat with theTrack in theTracks
-		set theLine to my getFormattedTrackName(theTrack, theFormat)
+		set theFormattedTrack to my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+		my showProgress(i, theCount, "Getting the report...", theFormattedTrack)
+		set theLine to theFormattedTrack
 		set theText to theText & theLine
 		if i < theCount - 1 then
 			set theText to theText & "
@@ -2233,14 +2359,24 @@ to getListReport(theTracks, theFormat)
 	return theText
 end getListReport
 
-to showUIPlaylistsList(theFlattenList, thePrompt)
-	set theChoiceList to my getChoiceList(theFlattenList, 0)
-	set theChoice to choose from list theChoiceList with prompt thePrompt
+--c--   showUIPlaylistsList(theFlattenList, thePrompt)
+--d--   Show a choose from list box to select a playlist.
+--a--   theFlattenList : list of records -- The list of playlist items.
+--a--   thePrompt : string -- The message to show in the box.
+--r--   string  -- The item choosen.
+--x--   showUIPlaylistsList({{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37060, theLabel:" Bibliothèque"}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8, theLabel:" Clips vidéo"}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37060, theLabel:" Musique"}}, "Please, select a playlist :") --> "2 -  Clips vidéo (8 tracks)"
+on showUIPlaylistsList(theFlattenList, thePrompt)
+	--log "showUIPlaylistsList = " & item 3 of theFlattenList
+	set theChoiceList to my getChoiceList(theFlattenList)
+	tell application "Music"
+		set theChoice to choose from list theChoiceList with prompt thePrompt
+	end tell
+	log "showUIPlaylistsList = theChoice : " & theChoice
 	return theChoice
 end showUIPlaylistsList
 
 
-to setMissingTracksToJukeBoxPlaylist()
+to setMissingTracksToJukeBoxPlaylist() -- TODO --> check...
 	set theDialogBox to display dialog "List :" default answer "" with icon note buttons {"OK"} default button "OK"
 	if text returned of theDialogBox is not "" then
 		set oldDelimiters to AppleScript's text item delimiters
@@ -2267,9 +2403,16 @@ to setMissingTracksToJukeBoxPlaylist()
 	end if
 end setMissingTracksToJukeBoxPlaylist
 
+to testGetListReport()
+	set theTracks to my getDialogTracksKind(false)
+	return my getListReport(theTracks, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+end testGetListReport
+
 on run
 	
-	return my testFixDeadTracks()
+	--my testGetListReport()
+	
+	return my testGetChoosenPlaylistFromTree()
 	
 	(*
 		set thePlaylist to my testGetChoosenPlaylist()
@@ -2288,11 +2431,97 @@ on run
 	
 	--set thePlaylists to my testGetAllTrackPlaylists()
 	
-	return my testRemoveCharacters()
 	
 end run
 
 ------- UNIT TESTS -------
+
+to testCheckIfDestinationHasEnoughSpace()
+	set theTracks to my getDialogTracksKind(false)
+	set theFolder to choose folder with prompt "Please select a folder to process :"
+	return my checkIfDestinationHasEnoughSpace(theTracks, theFolder)
+end testCheckIfDestinationHasEnoughSpace
+
+to testExportFileToSpecificFolder()
+	set theTrack to my getCurrentTrack(true)
+	tell application "Music"
+		set theLocation to location of theTrack
+	end tell
+	set theFolder to choose folder with prompt "Please select a folder to process :"
+	tell script "Finder Utilities"
+		set theFileTrack to convertPathToPOSIXString(theLocation)
+		set theDest to convertPathToPOSIXString(theFolder)
+	end tell
+	return my exportFileToSpecificFolder(theFileTrack, theDest, true)
+end testExportFileToSpecificFolder
+
+to testSetTrackLyrics()
+	set theTrack to my getCurrentTrack(true)
+	tell application "Music"
+		set theArtist to artist of theTrack
+		set theName to name of theTrack
+	end tell
+	return my setTrackLyrics(theArtist, theName, true)
+end testSetTrackLyrics
+
+to testFindAlbumArtworkWithGoogle()
+	set theTrack to my getCurrentTrack(true)
+	my findAlbumArtworkWithGoogle(theTrack)
+	tell application "Safari"
+		activate
+	end tell
+end testFindAlbumArtworkWithGoogle
+
+to testIsAlbumsArtistAlreadyExists()
+	set theTrack to my getCurrentTrack(true)
+	tell application "Music"
+		--		return my isAlbumsArtistAlreadyExists(artist of theTrack, album of theTrack)
+		return my isAlbumsArtistAlreadyExists("RED", album of theTrack)
+	end tell
+end testIsAlbumsArtistAlreadyExists
+
+to testGetChooseList()
+	set theTracks to my getDialogTracksKind(true)
+	set theChoosenTracks to my getChooseList(theTracks, true)
+	set theList to {}
+	repeat with theTrack in theChoosenTracks
+		tell script "List Lib"
+			set theIndex to word 1 of (theTrack as string)
+			copy item theIndex of theTracks to the end of theList
+		end tell
+	end repeat
+	repeat with theTrack in theList
+		log my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+	end repeat
+	return theList
+end testGetChooseList
+
+to testIsInPlaylist()
+	set theTrack to item 1 of my getDialogTracksKind(true)
+	set thePlaylist to testGetChoosenPlaylistFromTree()
+	return my isInPlaylist(theTrack, thePlaylist)
+end testIsInPlaylist
+
+to testFilterPlaylist()
+	set thePlaylist to item 1 of my getPlaylistByName("music box")
+	set theTracks to my filterPlaylist(thePlaylist, "dog", my _strArtistName_)
+	repeat with theTrack in theTracks
+		tell application "Music"
+			log artist of theTrack as string
+		end tell
+	end repeat
+	return theTracks
+end testFilterPlaylist
+
+to testIsCompilation()
+	set theTracks to my getDialogTracksKind(false)
+	return my isCompilation(theTracks)
+end testIsCompilation
+
+to testCheckIfMaxSize()
+	set thePlaylist to item 1 of my getPlaylistByName("--All Music ++--")
+	return my checkIfMaxSize(thePlaylist, 700)
+end testCheckIfMaxSize
 
 to testAddTrackToPlaylist()
 	set theTrack to my getCurrentTrack(false)
@@ -2382,12 +2611,11 @@ to testRootPlaylists()
 end testRootPlaylists
 
 to testExportSelectedTracksToSpecificFolder()
-	set thePlaylist to item 1 of getPlaylistByName("Test Export")
-	tell application "Music"
-		set theTracks to tracks of thePlaylist
-	end tell
+	set theTracks to my getDialogTracksKind(true)
 	
-	set theFolder to choose folder with prompt "Please select a folder to process :"
+	tell application "Music"
+		set theFolder to choose folder with prompt "Please select a folder to process :"
+	end tell
 	
 	set theResult to exportSelectedTracksToSpecificFolder(theTracks, theFolder)
 	set theList to theList of theResult
@@ -2418,6 +2646,7 @@ to testExportSelectedTracksToSpecificFolder()
 			*)
 		set theReport to getListReport(theErrorList, _formatedTrackNameTrackNameArtistNameAlbumName_)
 		set theUIReport to display dialog "Files ignored :" default answer theReport with icon note buttons {"OK"}
+		return theErrorList
 	end if
 end testExportSelectedTracksToSpecificFolder
 
@@ -2433,7 +2662,7 @@ to testGetChoosenPlaylistFromTree()
 			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
 		end tell
 		
-		set theChoice to showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
+		set theChoice to my showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
 		log theChoice
 		
 		if theChoice is not false then

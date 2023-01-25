@@ -166,7 +166,7 @@ on checkIfDestinationHasEnoughSpace(theAliasses, theDestination)
 				
 				set theFileName to name of theItem
 				tell script "UI Utilities"
-					showProgress(i, count of theAliasses, "Getting files space infos..." & (my convertByteSize(theTotalSize, 1024, 2) as string), i & " " & theFileName)
+					showProgress(i, count of theAliasses, "Getting files space infos... " & theTotalSize, theFileName)
 				end tell
 				
 				set i to i + 1
