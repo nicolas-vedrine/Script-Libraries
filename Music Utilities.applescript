@@ -86,8 +86,6 @@ use AppleScript version "2.4" -- Yosemite (10.10) or later
 use scripting additions
 
 property _albumNamePropertiesList_ : {"unknown album", "album inconnu", ""}
-property _musicExtensions_ : {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}
-
 
 ---------------------- Retreiving ----------------------
 
@@ -106,7 +104,7 @@ end getAllPlaylists
 --d--   Get all the playlists that contain the track.
 --a--   theTrack : track
 --r--   list -- 
---x--   getAllTrackPlaylists(theTrack) --> {playlist 1, playlist 2, playlist n, ...}
+--x--   getAllTrackPlaylists(track) --> {playlist 1, playlist 2, playlist n, ...}
 to getAllTrackPlaylists(theTrack)
 	tell application "Music"
 		set theResults to every user playlist of theTrack whose smart is false and name is not equal to "doublons"
@@ -116,9 +114,9 @@ end getAllTrackPlaylists
 
 --c--   getCurrentTrack(isDBIDTracks)
 --d--   Get the current track.
---a--   isDBIDTracks : boolean -- to return the track from the library playlist or the user playlist
---r--   file track 
---x--   getCurrentTrack(isDBIDTracks) --> file track
+--a--   isDBIDTracks : boolean -- true to return the track from the library playlist or false to return the track from the user playlist
+--r--   track 
+--x--   getCurrentTrack(false) --> track
 to getCurrentTrack(isDBIDTracks)
 	tell application "Music"
 		try
@@ -136,10 +134,10 @@ to getCurrentTrack(isDBIDTracks)
 end getCurrentTrack
 
 --c--   getDBIDTracks(theTracks)
---d--   Get track's database ID.
+--d--  Get track's database ID.
 --a--   theTracks : list -- the list of the tracks
 --r--   list -- the list of tracks from the library playlist
---x--   getDBIDTracks(theTracks) --> {file track 1, file track 2, file track n, ...}
+--x--   getDBIDTracks({file track 1, file track 2, file track n, ...}) --> {file track 1, file track 2, file track n, ...}
 to getDBIDTracks(theTracks)
 	tell application "Music"
 		set theTracksList to {}
@@ -156,7 +154,7 @@ to getDBIDTracks(theTracks)
 end getDBIDTracks
 
 --c--   getDialogTracksKind(isDBIDTracks)
---d--   Get a dialog message to select the current track or the selected tracks.
+--d--   Get a dialog message to deal with the current track or the selected tracks.
 --a--   isDBIDTracks : boolean -- to return the result from the library playlist or the user playlist
 --r--   list -- the list of tracks from the library playlist
 --x--   getDialogTracksKind(isDBIDTracks) --> {file track 1, file track 2, file track n, ...}
@@ -176,14 +174,14 @@ to getDialogTracksKind(isDBIDTracks)
 end getDialogTracksKind
 
 
---c--   getFolderPlaylistByName(folderPlaylistName)
+--c--   getFolderPlaylistByName(theFolderPlaylistName)
 --d--   Get a folder playlist by its name.
 --a--   folderPlaylistName : string -- the name of the folder playlist
 --r--   list of folder playlists 
---x--   getFolderPlaylistByName(folderPlaylistName) --> {folder playlist 1, folder playlist 2, folder playlist n, ...}
-to getFolderPlaylistByName(folderPlaylistName)
+--x--   getFolderPlaylistByName("my playlist") --> {folder playlist 1, folder playlist 2, folder playlist n, ...}
+to getFolderPlaylistByName(theFolderPlaylistName)
 	tell application "Music"
-		set folderPlaylists to every folder playlist whose name is folderPlaylistName
+		set folderPlaylists to every folder playlist whose name is theFolderPlaylistName
 		return folderPlaylists
 	end tell
 end getFolderPlaylistByName
@@ -191,8 +189,8 @@ end getFolderPlaylistByName
 --c--   getLastFolderPlaylist(theFolderPlaylist)
 --d--   Get the last user playlist of a folder playlist.
 --a--   theFolderPlaylist : folder playlist -- the folder playlist to get its last playlist
---r--   a user playlist 
---x--   getLastFolderPlaylist(theFolderPlaylist) --> user playlist or null if no user playlist in the folder playlist
+--r--   a user playlist or null if no user playlist in the folder playlist
+--x--   getLastFolderPlaylist("my playlist") --> user playlist
 to getLastFolderPlaylist(theFolderPlaylist)
 	tell application "Music"
 		set userPlaylists to every user playlist
@@ -211,9 +209,9 @@ end getLastFolderPlaylist
 
 --c--   getPlaylistByName(playlistName)
 --d--   Get the list of user playlists whose name is the playlist's name
---a--   playlistName : string -- the name of the playlists
---r--   a list of user playlists
---x--   getPlaylistByName(playlistName) --> {user playlist 1, user playlist 2, user playlist n, ...}
+--a--   playlistName : string -- the name of the playlist
+--r--   A list of user playlists. 
+--x--   getPlaylistByName("my playlist") --> {user playlist 1, user playlist 2, user playlist n, ...}
 to getPlaylistByName(playlistName)
 	tell application "Music"
 		set pls to get every user playlist whose name is equal to playlistName
@@ -253,10 +251,11 @@ end getPlaylistTracks
 --c--   getPlaylistsTree(thePlaylists, theLength)
 --d--   Get the playlists tree, like the one in Music. See testGetChoosenPlaylistFromTree() to test.
 --a--   thePlaylists : list -- the list of playlists to parse.
---a--   theLength : number -- the limit of playlists to parse (set the total to parse all the playlists).
---r--   a list of hierarchical records
---x--   getPlaylistsTree({thePlaylists}, 52) --> {record 1, record 2, record 3, record n}
+--a--   theLength : integer -- the limit of playlists to parse (set the total to parse all the playlists).
+--r--   a list of hierarchical playlist items (records)
+--x--   getPlaylistsTree({playlist 1, playlist 2, playlist 3, playlist n, ...}, 52) --> {record 1, record 2, record 3, record n}
 to getPlaylistsTree(thePlaylists, theLength)
+	--log "getPlaylistsTree = thePlaylists : " & thePlaylists
 	set theList to {}
 	set theFinalList to {}
 	set thePlaylistList to {}
@@ -328,9 +327,9 @@ end getPlaylistsTree
 
 --c--   getTreeItem(thePlaylist)
 --d--   Get the item of the tree of the playlists tree.
---a--   thePlaylist : the playlist to set as an item
---r--   a record
---x--   getTreeItem(thePlaylist) --> record
+--a--   thePlaylist : playlist -- the playlist to set as an item
+--r--   a record with different properties
+--x--   getTreeItem(playlist) --> {name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37060}
 to getTreeItem(thePlaylist)
 	tell application "Music"
 		set theName to name of thePlaylist
@@ -349,13 +348,14 @@ to getTreeItem(thePlaylist)
 	else
 		set theItem to {name:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount}
 	end if
+	log "getTreeItem = theItem : " & theItem
 	return theItem
 end getTreeItem
 
 --c--   getRootPlaylists()
 --d--   Get the root playlists only.
 --r--   a list of playlists
---x--   getRootPlaylists() --> list of playlists
+--x--   getRootPlaylists() --> {playlist 1, playlist 2, playlist 3, playlist n, ...}
 to getRootPlaylists()
 	tell application "Music"
 		set theList to {}
@@ -372,7 +372,7 @@ end getRootPlaylists
 
 --c--   hasParent(thePlaylist)
 --d--   To know if a playlist has parent or not.
---a--   thePlaylist : the playlist to know if it has a parent
+--a--   thePlaylist : playlist -- the playlist to know if it has a parent
 --r--   boolean
 --x--   hasParent(thePlaylist) --> true or false
 to hasParent(thePlaylist)
@@ -388,10 +388,10 @@ end hasParent
 
 --c--   getChildren(thePlaylistFolder)
 --d--   Get the children of a playlist folder.
---a--   thePlaylistFolder : the playlist folder to parse
+--a--   thePlaylistFolder : playlist folder -- the playlist folder to parse
 --r--   list
---x--   getChildren(thePlaylistFolder) --> {playlist 1, playlist 2, playlist n, ...}
-to getChildren(thePlaylistFolder)
+--x--   getChildren(playlist folder) --> {playlist 1, playlist 2, playlist n, ...}
+to getChildren(thePlaylistFolder) -- TODO --> to enhance
 	tell application "Music"
 		set theChildren to {}
 		set thePlaylists to every playlist
@@ -427,8 +427,8 @@ end getChoosenPlaylist
 --c--   getSelectedTracks(isDBIDTracks)
 --d--   Get the selected tracks.
 --a--   isDBIDTracks : boolean -- true or false to get the tracks from the current playlist or the library playlist
---r--   list
---x--   getChoosenPlaylist("", theFlattenPlaylists) --> {playlist 1, playlist 2}  (see testGetChoosenPlaylistFromTree() test unit)
+--r--   list of tracks
+--x--   getSelectedTracks(true) --> {track 1, track 2, track 3, track n, ...}
 to getSelectedTracks(isDBIDTracks)
 	tell application "Music"
 		set theTracks to (get selection)
@@ -447,10 +447,11 @@ end getSelectedTracks
 
 --c--   getTrackByDBID(theID)
 --d--   Get the track from the library playlist
---a--   theID : number -- the database ID of the track
+--a--   theID : integer -- the database ID of the track
 --r--   track
---x--   getTrackByDBID(theID) --> file track or null if not found
+--x--   getTrackByDBID(82162) --> file track or null if not found
 to getTrackByDBID(theID)
+	log "getTrackByDBID : theID = " & theID
 	tell application "Music"
 		set theResult to tracks where database ID is (theID as integer)
 		if (count of theResult) = 1 then
@@ -464,7 +465,7 @@ end getTrackByDBID
 
 --c--   getTracksByDBID(theIDs)
 --d--   Get the tracks from the library playlist
---a--   theIDs : list of numbers -- the database IDs of the tracks
+--a--   theIDs : list of integers -- the database IDs of the tracks
 --r--   list
 --x--   getTracksByDBID({105692, 19909, 68271}) --> {file track 1, file track 2, file track 3}
 to getTracksByDBID(theIDs)
@@ -522,7 +523,7 @@ end getiTunesFolderName
 --c--   findDeadTracks(theTracks)
 --d--   Get the database IDs of the tracks list
 --a--   theTracks : list of tacks -- the tracks to get its database IDs
---r--   list
+--r--   list of integers
 --x--   getTracksIDList({file tracks 1, file tracks 2, file tracks 3}) --> {105692, 19909, 68271}
 to findDeadTracks(theTracks)
 	tell application "Music"
@@ -835,8 +836,10 @@ end normalizeTracksCase
 --c--   removeCharacters(theTracks, theKind, thePlace, theNumber)
 --d--   Remove n characters at the back or the front of tracks 
 --a--   theTracks : list of file tracks -- the tracks to get its database IDs
---r--   list
---x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
+--a--   theKind : integer -- The kind of string to remove the chars.
+--a--   thePlace : string -- The place (front or back) to remove the chars.
+--a--   theNumber : integer -- The nuber of chars to remove.
+--x--   removeCharacters({track 1, track 2, track 2}, 1, "Back", 2)
 to removeCharacters(theTracks, theKind, thePlace, theNumber)
 	tell application "Music"
 		repeat with theTrack in theTracks
@@ -1492,9 +1495,9 @@ to convertFileTracks(theFileTracks)
 	return convertedTracks
 end convertFileTracks
 
-property _strTrackName_ : "trackName"
-property _strArtistName_ : "artistName"
-property _strAlbumName_ : "albumName"
+property _strTrackName_ : 1
+property _strArtistName_ : 2
+property _strAlbumName_ : 3
 
 --c--   getStrTrackName() -- TODO - To deprecated.
 --d--   Return the _strTrackName_ property.
@@ -2412,7 +2415,7 @@ on run
 	
 	--my testGetListReport()
 	
-	return my testGetChoosenPlaylistFromTree()
+	--return my testGetChoosenPlaylistFromTree()
 	
 	(*
 		set thePlaylist to my testGetChoosenPlaylist()
@@ -2429,7 +2432,7 @@ on run
 		end if
 	*)
 	
-	--set thePlaylists to my testGetAllTrackPlaylists()
+	my testGetTracksByDBID()
 	
 	
 end run
