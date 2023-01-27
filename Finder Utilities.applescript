@@ -24,6 +24,17 @@ to getFileName(thePath)
 	end tell
 end getFileName
 
+to getFileNameWithoutExtension(theAlias)
+	set theName to my getFileName(theAlias)
+	set theExtension to my getFileExtension(theAlias)
+	set strUtils to loadScriptFromLibrary("String Utilities.scpt")
+	tell strUtils
+		set theFileName to removeChars(theName, _strBack_ of strUtils, (count of theExtension) + 1)
+	end tell
+	log theExtension
+	return theFileName
+end getFileNameWithoutExtension
+
 to getFileExtension(thePath)
 	tell application "Finder"
 		return name extension of (info for thePath)
@@ -186,6 +197,16 @@ to findMetaDataInFolderByName(HFSPath, searchKey)
 	return paragraphs of (do shell script "mdfind " & options)
 end findMetaDataInFolderByName
 
+on loadScriptFromLibrary(theScriptName)
+	tell application "Finder"
+		set theMe to get path to me
+		set theParent to container of the result as string
+		set theScriptPath to theParent & theScriptName
+		set theScript to (load script file theScriptPath)
+		return theScript
+	end tell
+end loadScriptFromLibrary
+
 on run
 	--set thePath to "/Volumes/DATA/conmeubonailleuco/Vidéos/Projet/Black Sargass/RUSH/2020-07-21 - Répète/Fusion/Back"
 	--set thePathXXX to convertPathToAlias(thePath)
@@ -196,7 +217,7 @@ on run
 	--	--reveal theFiles
 	--end tell
 	
-	set theFolder to "Macintosh HD:Users:formateur:Desktop:test_script_git:hubert_alex:"
-	set theThePath to convertPathToPOSIXString(theFolder)
-	
+	set theAlias to alias "Macintosh HD:Library:Script Libraries:Music Utilities.applescript"
+	set theFileName to getFileNameWithoutExtension(theAlias)
+	return theFileName
 end run
