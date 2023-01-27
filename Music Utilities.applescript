@@ -91,7 +91,7 @@ property _albumNamePropertiesList_ : {"unknown album", "album inconnu", ""}
 
 --c--   getAllPlaylists()
 --d--   Get all the library's playlists.
---r--   list of playlists 
+--r--   list -- 
 --x--   getAllPlaylists() --> {playlist 1, playlist 2, playlist n, ...}
 to getAllPlaylists()
 	tell application "Music"
@@ -103,7 +103,7 @@ end getAllPlaylists
 --c--   getAllTrackPlaylists(theTrack)
 --d--   Get all the playlists that contain the track.
 --a--   theTrack : track
---r--   list of playlists 
+--r--   list -- 
 --x--   getAllTrackPlaylists(track) --> {playlist 1, playlist 2, playlist n, ...}
 to getAllTrackPlaylists(theTrack)
 	tell application "Music"
@@ -135,9 +135,9 @@ end getCurrentTrack
 
 --c--   getDBIDTracks(theTracks)
 --d--  Get track's database ID.
---a--   theTracks : list -- The list of the tracks
---r--   list -- The list of tracks DB ID from the library playlist.
---x--   getDBIDTracks({file track 1, file track 2, file track n, ...}) --> {8765, 8432, 4515, ...}
+--a--   theTracks : list -- the list of the tracks
+--r--   list -- the list of tracks from the library playlist
+--x--   getDBIDTracks({file track 1, file track 2, file track n, ...}) --> {file track 1, file track 2, file track n, ...}
 to getDBIDTracks(theTracks)
 	tell application "Music"
 		set theTracksList to {}
@@ -155,9 +155,9 @@ end getDBIDTracks
 
 --c--   getDialogTracksKind(isDBIDTracks)
 --d--   Get a dialog message to deal with the current track or the selected tracks.
---a--   isDBIDTracks : boolean -- Return the result from the library playlist or the user playlist.
---r--   list -- The list of tracks from the library playlist.
---x--   getDialogTracksKind(isDBIDTracks) --> {track 1, track 2, track n, ...}
+--a--   isDBIDTracks : boolean -- to return the result from the library playlist or the user playlist
+--r--   list -- the list of tracks from the library playlist
+--x--   getDialogTracksKind(isDBIDTracks) --> {file track 1, file track 2, file track n, ...}
 to getDialogTracksKind(isDBIDTracks)
 	tell application "Music"
 		set dialogResult to display dialog ¬
@@ -176,7 +176,7 @@ end getDialogTracksKind
 
 --c--   getFolderPlaylistByName(theFolderPlaylistName)
 --d--   Get a folder playlist by its name.
---a--   folderPlaylistName : string -- The name of the folder playlist.
+--a--   folderPlaylistName : string -- the name of the folder playlist
 --r--   list of folder playlists 
 --x--   getFolderPlaylistByName("my playlist") --> {folder playlist 1, folder playlist 2, folder playlist n, ...}
 to getFolderPlaylistByName(theFolderPlaylistName)
@@ -188,8 +188,8 @@ end getFolderPlaylistByName
 
 --c--   getLastFolderPlaylist(theFolderPlaylist)
 --d--   Get the last user playlist of a folder playlist.
---a--   theFolderPlaylist : folder playlist -- The folder playlist to get its last playlist.
---r--   A user playlist or null if no user playlist in the folder playlist.
+--a--   theFolderPlaylist : folder playlist -- the folder playlist to get its last playlist
+--r--   a user playlist or null if no user playlist in the folder playlist
 --x--   getLastFolderPlaylist("my playlist") --> user playlist
 to getLastFolderPlaylist(theFolderPlaylist)
 	tell application "Music"
@@ -208,8 +208,8 @@ to getLastFolderPlaylist(theFolderPlaylist)
 end getLastFolderPlaylist
 
 --c--   getPlaylistByName(playlistName)
---d--   Get the list of user playlists whose name is the playlist's name.
---a--   playlistName : string -- The name of the playlist.
+--d--   Get the list of user playlists whose name is the playlist's name
+--a--   playlistName : string -- the name of the playlist
 --r--   A list of user playlists. 
 --x--   getPlaylistByName("my playlist") --> {user playlist 1, user playlist 2, user playlist n, ...}
 to getPlaylistByName(playlistName)
@@ -250,10 +250,10 @@ end getPlaylistTracks
 
 --c--   getPlaylistsTree(thePlaylists, theLength)
 --d--   Get the playlists tree, like the one in Music. See testGetChoosenPlaylistFromTree() to test.
---a--   thePlaylists : list -- The list of playlists to parse.
---a--   theLength : integer -- The limit of playlists to parse (set the total to parse all the playlists).
---r--   A list of hierarchical playlist items (records)
---x--   getPlaylistsTree({playlist 1, playlist 2, playlist 3, playlist n, ...}, 2) --> {record 1, record 2, record 3, record n}
+--a--   thePlaylists : list -- the list of playlists to parse.
+--a--   theLength : integer -- the limit of playlists to parse (set the total to parse all the playlists).
+--r--   a list of hierarchical playlist items (records)
+--x--   getPlaylistsTree({playlist 1, playlist 2, playlist 3, playlist n, ...}, 52) --> {record 1, record 2, record 3, record n}
 to getPlaylistsTree(thePlaylists, theLength)
 	--log "getPlaylistsTree = thePlaylists : " & thePlaylists
 	set theList to {}
@@ -327,8 +327,8 @@ end getPlaylistsTree
 
 --c--   getTreeItem(thePlaylist)
 --d--   Get the item of the tree of the playlists tree.
---a--   thePlaylist : playlist -- The playlist to set as an item.
---r--   A record with different properties.
+--a--   thePlaylist : playlist -- the playlist to set as an item
+--r--   a record with different properties
 --x--   getTreeItem(playlist) --> {name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37060}
 to getTreeItem(thePlaylist)
 	tell application "Music"
@@ -348,13 +348,13 @@ to getTreeItem(thePlaylist)
 	else
 		set theItem to {name:theName, theID:theID, isFolder:isFolder, theClass:theClass, isSmart:isSmart, theCount:theCount}
 	end if
-	--log "getTreeItem = theItem : " & theItem
+	log "getTreeItem = theItem : " & theItem
 	return theItem
 end getTreeItem
 
 --c--   getRootPlaylists()
 --d--   Get the root playlists only.
---r--   A list of playlists.
+--r--   a list of playlists
 --x--   getRootPlaylists() --> {playlist 1, playlist 2, playlist 3, playlist n, ...}
 to getRootPlaylists()
 	tell application "Music"
@@ -372,7 +372,7 @@ end getRootPlaylists
 
 --c--   hasParent(thePlaylist)
 --d--   To know if a playlist has parent or not.
---a--   thePlaylist : playlist -- The playlist to know if it has a parent.
+--a--   thePlaylist : playlist -- the playlist to know if it has a parent
 --r--   boolean
 --x--   hasParent(thePlaylist) --> true or false
 to hasParent(thePlaylist)
@@ -388,8 +388,8 @@ end hasParent
 
 --c--   getChildren(thePlaylistFolder)
 --d--   Get the children of a playlist folder.
---a--   thePlaylistFolder : playlist folder -- The playlist folder to parse.
---r--   list of playlist
+--a--   thePlaylistFolder : playlist folder -- the playlist folder to parse
+--r--   list
 --x--   getChildren(playlist folder) --> {playlist 1, playlist 2, playlist n, ...}
 to getChildren(thePlaylistFolder) -- TODO --> to enhance
 	tell application "Music"
@@ -408,11 +408,11 @@ end getChildren
 
 --c--   getChoosenPlaylist(theChoice, theFlattenPlaylists)
 --d--   Get the choosen playlist from an UI list.
---a--   theChoice : string -- The item choosen from the UIList.
+--a--   theChoice : string -- the item choosen from the UIList
 --a--   theFlattenPlaylists : list of records -- the flatten list of playlists
 --r--   playlist
---x--   getChoosenPlaylist("41 -           Clips (iPad) (2 tracks)", {playlist 1, playlist 2, playlist n, ...}) --> playlist 
-to getChoosenPlaylist(theChoice, theFlattenPlaylists) -- see testGetChoosenPlaylistFromTree() test unit
+--x--   getChoosenPlaylist("41 -           Clips (iPad) (2 tracks)", {playlist 1, playlist 2, playlist n, ...}) --> playlist  (see testGetChoosenPlaylistFromTree() test unit)
+to getChoosenPlaylist(theChoice, theFlattenPlaylists)
 	set selectedIndex to word 1 of (item 1 of theChoice as string)
 	set theItem to item selectedIndex of theFlattenPlaylists
 	set theID to theID of theItem
@@ -426,7 +426,7 @@ end getChoosenPlaylist
 
 --c--   getSelectedTracks(isDBIDTracks)
 --d--   Get the selected tracks.
---a--   isDBIDTracks : boolean -- true or false to get the tracks from the current playlist or the library playlist.
+--a--   isDBIDTracks : boolean -- true or false to get the tracks from the current playlist or the library playlist
 --r--   list of tracks
 --x--   getSelectedTracks(true) --> {track 1, track 2, track 3, track n, ...}
 to getSelectedTracks(isDBIDTracks)
@@ -466,7 +466,7 @@ end getTrackByDBID
 --c--   getTracksByDBID(theIDs)
 --d--   Get the tracks from the library playlist
 --a--   theIDs : list of integers -- the database IDs of the tracks
---r--   list of track
+--r--   list
 --x--   getTracksByDBID({105692, 19909, 68271}) --> {file track 1, file track 2, file track 3}
 to getTracksByDBID(theIDs)
 	tell application "Music"
@@ -485,7 +485,7 @@ end getTracksByDBID
 --c--   getTracksIDList(theTracks)
 --d--   Get the database IDs of the tracks list
 --a--   theTracks : list of tacks -- the tracks to get its database IDs
---r--   list of integers
+--r--   list
 --x--   getTracksIDList({file track 1, file track 2, file track 3}) --> {105692, 19909, 68271}
 to getTracksIDList(theTracks)
 	set theList to {}
@@ -630,12 +630,7 @@ end moreThanOneResult
 
 ---------- CHARACTERS BEGIN ----------
 
---c--   addTextToTrack(theTrack, theText)
---d--   Add some text to a track.
---a--   theTrack : track -- The tracks to add some text.
---a--   theText : string -- The text to add.
---x--   addTextToTrack(track, "some text")
-to addTextToTrack(theTrack, theText) -- TODO -- to enhance
+to addTextToTrack(theTrack, theText) -- TODO
 	tell application "Music"
 		set theTrackName to name of theTrack
 		set name of theTrack to theTrackName & theText
@@ -708,8 +703,8 @@ to combineTracksProperties(theOriginalTrack, theTrackToCombine)
 end combineTracksProperties
 
 --c--   deleteTrack(theTrack)
---d--   Delete a track from the library and the file from the hard drive.
---a--   theTrack : file track -- The track to delete.
+--d--   delete a track from the library and the file from the hard drive
+--a--   theTrack : file track -- the track to delete
 --a--   deleteFile : boolean -- true to delete the file from the hard drive
 --x--   deleteTrack(file track, true)
 to deleteTrack(theTrack, deleteFile)
@@ -724,10 +719,10 @@ to deleteTrack(theTrack, deleteFile)
 end deleteTrack
 
 --c--   fixSortAlbum(theTracks, showMessage)
---d--   Fix sorting of tracks to have them in the same album.
---a--   theTracks : list of tacks -- The tracks to fix.
---a--   showMessage : boolean -- true to show a message.
---r--   list -- list of file tracks.
+--d--   fix sorting of tracks to have them in the same album
+--a--   theTracks : list of tacks -- the tracks to fix
+--a--   showMessage : boolean -- true to show a message
+--r--   list -- list of file tracks
 --x--   fixSortAlbum({file track 1, file track 2, file track 3}, true) --> {file track 1, file track 2, file track 3}
 to fixSortAlbum(theTracks, showMessage)
 	tell application "Music"
@@ -839,11 +834,11 @@ to normalizeTracksCase(theTracks, showMessage) -- TODO
 end normalizeTracksCase
 
 --c--   removeCharacters(theTracks, theKind, thePlace, theNumber)
---d--   Remove n characters at the back or the front of tracks.
---a--   theTracks : list of file tracks -- The tracks to get its database IDs.
+--d--   Remove n characters at the back or the front of tracks 
+--a--   theTracks : list of file tracks -- the tracks to get its database IDs
 --a--   theKind : integer -- The kind of string to remove the chars.
 --a--   thePlace : string -- The place (front or back) to remove the chars.
---a--   theNumber : integer -- The number of chars to remove.
+--a--   theNumber : integer -- The nuber of chars to remove.
 --x--   removeCharacters({track 1, track 2, track 2}, 1, "Back", 2)
 to removeCharacters(theTracks, theKind, thePlace, theNumber)
 	tell application "Music"
@@ -886,9 +881,9 @@ end removeCharacters
 ---------- CHARACTERS END ----------
 
 --c--   setTracksToFavorite(theTracks, flag)
---d--   Set the favorite flag to the tracks.
---a--   theTracks : list of tracks -- The tracks to set to favorite.
---a--   flag : boolean -- true to set to favorite or false to remove the favorite.
+--d--   Set the favorite flag to the tracks
+--a--   theTracks : list of tracks -- the tracks to set to favorite
+--a--   flag : boolean -- true to set to favorite or false to remove the favorite
 --x--   setTracksToFavorite({track 1, track 2, track 3}, true)
 to setTracksToFavorite(theTracks, flag)
 	repeat with theTrack in theTracks
@@ -937,11 +932,11 @@ end setTracksNumbers
 ---------------------- Creating ----------------------
 
 --c--   createNewPlaylist(thePlaylistName)
---d--   Create a new playlist.
+--d--   Create a new playlist 
 --a--   thePlaylistName : string -- the name of the playlist to create
 --r--   user playlist -- the playlist created
 --x--   createNewPlaylist("the name of the playlist") --> user playlist
-to createNewPlaylist(thePlaylistName) -- TODO --> to enhance.
+to createNewPlaylist(thePlaylistName)
 	tell application "Music"
 		set thePlaylists to (get every user playlist whose smart is false and name is equal to thePlaylistName)
 		set theCount to count of thePlaylists
@@ -959,7 +954,7 @@ end createNewPlaylist
 ---------- LYRICS ----------
 
 --c--   deleteTracksLyrics(theTracks, showMessage)
---d--   Delete the lyrics of the tracks.
+--d--   delete the lyrics of the tracks
 --a--   theTracks : list of tacks -- the tracks to delete its lyrics
 --a--   showMessage : boolean -- the tracks to delete its lyrics
 --x--   deleteTracksLyrics({track 1, track 2, track 3}, true)
@@ -1014,7 +1009,7 @@ to downloadArtworkWithGoogle(theList) -- TODO
 end downloadArtworkWithGoogle
 
 --c--   removeArtworks(theTracks, showMessage)
---d--   Remove all the artworks of the tracks.
+--d--   Remove all the artworks of the tracks
 --a--   theTracks : list of tracks -- the tracks to remove the artworks
 --a--   showMessage : boolean -- true to show an end message
 --r--   list of tracks
@@ -1061,7 +1056,7 @@ to setTracksArtworks(theTracks, theArtworks)
 end setTracksArtworks
 
 --c--   trackHasArtwork(theTrack)
---d--   To know if a track has an artwork.
+--d--   True if has artwork, false if not.
 --a--   theTrack : track -- The track to know if it has an artwork
 --r--   boolean
 --x--   trackHasArtwork(track) --> true
@@ -1138,11 +1133,11 @@ property _fixTrackLocationMoreThanOneTrack_ : "2"
 property _fixTrackLocationTrackNotFound_ : "3"
 
 --c--   fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
---d--   Fix the dead track (! symbol) by looking for the files in paths and copy it in a lost and found folder.
+--d--   Fix the dead track (! symbol) by looking for the files in paths and copy it in a lost and found folder
 --a--   theTracks : list of file tracks -- the tracks to fix
 --a--   thePrimaryPath : string -- the path to the first folder to find the files
 --a--   theSecondaryPath : string -- the path to the second folder to find the files
---r--   list of records -- the list of records of the different lists of the result
+--r--   list -- the list of records of the different lists of the result
 --x--   fixDeadTracks({file track 1, file track 2, file track 3, file track 4}, "/Volumes/VOYAGEUR/iTunes/Musique/", "/Volumes/music/Musique/", "/Volumes/VOYAGEUR/iTunes/Find/") --> {{itemsFound:{file track 1, file track 3}, itemsNotFound:{file track 2, file track 5}, itemsAlreadyFound:{file track 6, file track 7, file track 8}}}
 to fixDeadTracks(theTracks, thePrimaryPath, theSecondaryPath, theFindFolder)
 	--display dialog "fixDeadTracks"
@@ -1311,7 +1306,7 @@ on fixTrackLocation(theTrack, theReturnedList, thePath, theDestination)
 end fixTrackLocation
 
 --c--   spotlightTrack(theTrack, thePath)
---d--   Do a search for file track in a patch with spotlight.
+--d--   Do a search for file track in a patch with spotlight
 --a--   theTrack : file track -- the track to search
 --a--   thePath : string -- the path to look for the track
 --r--   list -- The list of files found.
@@ -1486,7 +1481,7 @@ to getMostFamousPlaylists()
 end getMostFamousPlaylists
 
 --c--   convertFileTracks(theFileTracks)
---d--   Convert the file tracks to the default convert Music setting.
+--d--   Convert the file tracks to the default convert Music setting
 --a--   theFileTracks : file tracks -- The file tracks to convert.
 --r--   list -- List of file tracks.
 --x--   convertFileTracks({file track 1, file track 2, file track 3}) --> {file track 1, file track 2, file track 3}
@@ -1910,9 +1905,9 @@ property _APIHerokuAppURL_ : "https://lyric-api.herokuapp.com/api/find/"
 property _isNoRemember_ : false
 
 --c--   setTracksLyricsWithAPIHerokuApp(theTracks)
---d--   Set the lyrics of tracks with the Heroku API.
+--d--   Set the lyrics of tracks with the Heroku API
 --a--   theTracks : list -- List of tracks.
---r--   list  -- list of tracks where the lyrics were set.
+--r--   list  -- List of tracks where the lyrics were set.
 --x--   setTracksLyricsWithAPIHerokuApp({track 1, track 2, track 3, track 4}) --> {track 1, track 2}
 to setTracksLyricsWithAPIHerokuApp(theTracks)
 	tell application "Music"
@@ -1933,9 +1928,9 @@ to setTracksLyricsWithAPIHerokuApp(theTracks)
 end setTracksLyricsWithAPIHerokuApp
 
 --c--   setTrackLyricsWithAPIHerokuApp(theTrack)
---d--   Set the lyrics of a track with the Heroku API.
+--d--   Set the lyrics of a track with the Heroku API
 --a--   theTrack : track -- the track.
---r--   boolean : true or false  -- true if the lyrics is set, false if not.
+--r--   boolean : true or false  -- True if the lyrics is set, false if not.
 --x--   setTrackLyricsWithAPIHerokuApp(track) --> true
 to setTrackLyricsWithAPIHerokuApp(theTrack)
 	tell application "Music"
@@ -2420,7 +2415,7 @@ on run
 	
 	--my testGetListReport()
 	
-	return my testGetChoosenPlaylistFromTree()
+	--return my testGetChoosenPlaylistFromTree()
 	
 	(*
 		set thePlaylist to my testGetChoosenPlaylist()
@@ -2778,5 +2773,3 @@ to testGetPlaylistTracks()
 	set theTracks to my getPlaylistTracks(thePlaylist, 2000)
 	return theTracks
 end testGetPlaylistTracks
-
--- test
