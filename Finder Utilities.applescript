@@ -1,4 +1,5 @@
 property _musicExtensions_ : {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}
+property _isDebug_ : true
 
 to createFolder(thePath, folderName)
 	tell application "Finder"
@@ -23,6 +24,17 @@ to getFileName(thePath)
 		return name of (info for thePath)
 	end tell
 end getFileName
+
+to getFileNameWithoutExtension(theAlias)
+	set theName to my getFileName(theAlias)
+	set theExtension to my getFileExtension(theAlias)
+	set strUtils to loadScriptFromLibrary("String Utilities.scpt")
+	tell strUtils
+		set theFileName to removeChars(theName, _strBack_ of strUtils, (count of theExtension) + 1)
+	end tell
+	log theExtension
+	return theFileName
+end getFileNameWithoutExtension
 
 to getFileExtension(thePath)
 	tell application "Finder"
@@ -186,6 +198,58 @@ to findMetaDataInFolderByName(HFSPath, searchKey)
 	return paragraphs of (do shell script "mdfind " & options)
 end findMetaDataInFolderByName
 
+to findFiles(thePath, theString, theTypes, isCaseSensitive)
+	set theCommand to "find"
+	set theArgs to "-type f" & " "
+	if (count of theTypes) > 0 then
+		--set theArgs to theArgs & "-iname"
+	end if
+	set i to 1
+	if isCaseSensitive then
+		set theName to "-name "
+	else
+		set theName to "-iname "
+	end if
+	if theString is not "" then
+		set theArgs to theArgs & "-iname \"*" & theString & "*\"" -- test
+	else
+		repeat with theType in theTypes
+			if i = 1 then
+				set theArgs to theArgs & theName & " " & "\"*." & theType & "\""
+			else
+				set theArgs to theArgs & "-o" & " " & theName & "\"*." & theType & "\""
+			end if
+			if i < (count of theTypes) then
+				set theArgs to theArgs & " "
+			end if
+			set i to i + 1
+		end repeat
+	end if
+	
+	--set theArgs to "-iname \"*the*\"" -- test
+	
+	--set theArgs to "-iname \"*.mp3\" -o -name \"*.aac\" -o -name \"*.m4a\" -o -name \"*.aiff\" -o -name \"*.wav\" -o -name \"*.alac\""
+	--set theArgs to "-iname \"*.m4a\""
+	
+	set theCommand to theCommand & " " & quoted form of thePath & " " & theArgs
+	log "findFiles = theCommand : " & theCommand
+	tell script "List Lib"
+		set theList to sortList(paragraphs of (do shell script theCommand))
+	end tell
+	
+	return theList
+end findFiles
+
+on loadScriptFromLibrary(theScriptName)
+	tell application "Finder"
+		set theMe to get path to me
+		set theParent to container of the result as string
+		set theScriptPath to theParent & theScriptName
+		set theScript to (load script file theScriptPath)
+		return theScript
+	end tell
+end loadScriptFromLibrary
+
 on run
 	--set thePath to "/Volumes/DATA/conmeubonailleuco/Vidéos/Projet/Black Sargass/RUSH/2020-07-21 - Répète/Fusion/Back"
 	--set thePathXXX to convertPathToAlias(thePath)
@@ -196,7 +260,7 @@ on run
 	--	--reveal theFiles
 	--end tell
 	
-	set theFolder to "Macintosh HD:Users:formateur:Desktop:test_script_git:hubert_alex:"
-	set theThePath to convertPathToPOSIXString(theFolder)
-	
+	set theAlias to alias "Macintosh HD:Library:Script Libraries:Music Utilities.applescript"
+	set theFileName to getFileNameWithoutExtension(theAlias)
+	return theFileName
 end run

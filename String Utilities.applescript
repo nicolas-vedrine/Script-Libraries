@@ -369,8 +369,8 @@ on run
 			return (myName of theScript)
 		end tell
 	*)
-	set theText to "String Utilities return "
-	set theTextCamelCased to changeCase of (my removeLastSpace(my formatSpace(theText))) to my _strCamelCase_
-	set theFinalText to my replaceChars(theTextCamelCased, " ", "")
-	return theFinalText
+	set theFileName to "Music Utilities.applescript"
+	set theExt to "applescript"
+	set theFileNameWithout to removeChars(theFileName, my _strBack_, (count of theExt) + 1)
+	return theFileNameWithout
 end run
