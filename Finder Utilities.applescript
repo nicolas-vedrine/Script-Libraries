@@ -1,4 +1,5 @@
 property _musicExtensions_ : {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}
+property _isDebug_ : true
 
 to createFolder(thePath, folderName)
 	tell application "Finder"
@@ -196,6 +197,48 @@ to findMetaDataInFolderByName(HFSPath, searchKey)
 	set options to options & " \"kMDItemFSName == " & quoted form of searchKey & "\""
 	return paragraphs of (do shell script "mdfind " & options)
 end findMetaDataInFolderByName
+
+to findFiles(thePath, theString, theTypes, isCaseSensitive)
+	set theCommand to "find"
+	set theArgs to "-type f" & " "
+	if (count of theTypes) > 0 then
+		--set theArgs to theArgs & "-iname"
+	end if
+	set i to 1
+	if isCaseSensitive then
+		set theName to "-name "
+	else
+		set theName to "-iname "
+	end if
+	if theString is not "" then
+		set theArgs to theArgs & "-iname \"*" & theString & "*\"" -- test
+	else
+		repeat with theType in theTypes
+			if i = 1 then
+				set theArgs to theArgs & theName & " " & "\"*." & theType & "\""
+			else
+				set theArgs to theArgs & "-o" & " " & theName & "\"*." & theType & "\""
+			end if
+			if i < (count of theTypes) then
+				set theArgs to theArgs & " "
+			end if
+			set i to i + 1
+		end repeat
+	end if
+	
+	--set theArgs to "-iname \"*the*\"" -- test
+	
+	--set theArgs to "-iname \"*.mp3\" -o -name \"*.aac\" -o -name \"*.m4a\" -o -name \"*.aiff\" -o -name \"*.wav\" -o -name \"*.alac\""
+	--set theArgs to "-iname \"*.m4a\""
+	
+	set theCommand to theCommand & " " & quoted form of thePath & " " & theArgs
+	log "findFiles = theCommand : " & theCommand
+	tell script "List Lib"
+		set theList to sortList(paragraphs of (do shell script theCommand))
+	end tell
+	
+	return theList
+end findFiles
 
 on loadScriptFromLibrary(theScriptName)
 	tell application "Finder"
