@@ -227,7 +227,8 @@ to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
 	end if
 	
 	set theCommand to theCommand & " " & quoted form of thePath & " " & theArgs
-	log "findFiles : theCommand = " & theCommand
+	log "findFiles = theCommand : " & theCommand
+	
 	tell script "List Lib"
 		set theList to sortList(paragraphs of (do shell script theCommand))
 	end tell
