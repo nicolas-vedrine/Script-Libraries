@@ -50,12 +50,6 @@ to showProgress(current, total, strDescription, strAdditionalDescription)
 	end if
 end showProgress
 
-on run
-	set theItems to {"toto", "tata", "titi"}
-	set theObjs to {"toto"}
-	getObjItems(theItems, theObjs)
-end run
-
 on createPromptList()
 	set theObj to {{theLabel:"No (remember)", theData:"no_remember"}, {theLabel:"No", theData:"no"}, {theLabel:"Yes", theData:"yes"}, {theLabel:"Yes (remember", theData:"yes"}}
 	set theChoicesPrompt to getUIItems(theObj)
@@ -83,3 +77,17 @@ on createDialog()
 		end if
 	end tell
 end createDialog
+
+on showMessage(theMessage, theApp)
+	tell application theApp
+		display dialog theMessage buttons {"OK"} ¬
+			default button 1 ¬
+			with icon 1
+	end tell
+end showMessage
+
+on run
+	set theItems to {"toto", "tata", "titi"}
+	set theObjs to {"toto"}
+	getObjItems(theItems, theObjs)
+end run
