@@ -198,7 +198,7 @@ to findMetaDataInFolderByName(HFSPath, searchKey)
 	return paragraphs of (do shell script "mdfind " & options)
 end findMetaDataInFolderByName
 
-to findFiles(thePath, theString, theTypes, isCaseSensitive)
+to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
 	set theCommand to "find"
 	set theArgs to "-type f" & " "
 	if (count of theTypes) > 0 then
@@ -210,8 +210,8 @@ to findFiles(thePath, theString, theTypes, isCaseSensitive)
 	else
 		set theName to "-iname "
 	end if
-	if theString is not "" then
-		set theArgs to theArgs & "-iname \"*" & theString & "*\"" -- test
+	if theKeyword is not "" then
+		set theArgs to theArgs & "-iname \"*" & theKeyword & "*\"" -- test
 	else
 		repeat with theType in theTypes
 			if i = 1 then
@@ -226,13 +226,8 @@ to findFiles(thePath, theString, theTypes, isCaseSensitive)
 		end repeat
 	end if
 	
-	--set theArgs to "-iname \"*the*\"" -- test
-	
-	--set theArgs to "-iname \"*.mp3\" -o -name \"*.aac\" -o -name \"*.m4a\" -o -name \"*.aiff\" -o -name \"*.wav\" -o -name \"*.alac\""
-	--set theArgs to "-iname \"*.m4a\""
-	
 	set theCommand to theCommand & " " & quoted form of thePath & " " & theArgs
-	log "findFiles = theCommand : " & theCommand
+	log "findFiles : theCommand = " & theCommand
 	tell script "List Lib"
 		set theList to sortList(paragraphs of (do shell script theCommand))
 	end tell
