@@ -674,7 +674,7 @@ to addTracksToPlaylists(theTracks, thePlaylists, showMessage)
 	set i to 1
 	set theList to {}
 	repeat with theTrack in theTracks
-		my showProgress(i, length of theTracks, "", my getFormattedTrackName(my _formatedTrackNameTrackNameArtistNameAlbumName_))
+		my showProgress(i, count of theTracks, "", my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
 		repeat with pl in thePlaylists
 			--display dialog the name of pl as string
 			if my addTrackToPlaylist(theTrack, pl) then
@@ -1457,33 +1457,6 @@ Are you sure ?" buttons {"Cancel", "No", "Yes"} ¬
 end chooseFileManually
 
 ---------- DEAD TRACKS END ----------
-
-
--- TODO >>> déplacer la fonction dans script perso
-to getMostFamousPlaylists()
-	set playlistsName to {"Road", "Buzz MP3", "Soirée", "--Hard & Metal--", "--Rap & Dance--", "--Rock & Folk--", "--Slow & Balade--", "--Fun & Délire--", "À Normaliser", "GoPro", "Drums Covers", "Black Sargass Covers", "Firecrackers"}
-	set playlistsList to {}
-	
-	repeat with playlistName in playlistsName
-		--display dialog playlistName
-		set pls to getPlaylistByName(playlistName)
-		if (count of pls) is equal to 0 then
-			display dialog "\"" & playlistName & "\"" & " introuvable !
- Le script continuera..."
-		else
-			set pl to item 1 of getPlaylistByName(playlistName)
-			copy contents of pl to the end of playlistsList
-		end if
-	end repeat
-	
-	set jukeBoxFolder to item 1 of getFolderPlaylistByName("Juke Box")
-	set lastJukeBoxPlaylist to getLastFolderPlaylist(jukeBoxFolder)
-	
-	copy contents of lastJukeBoxPlaylist to the end of playlistsList
-	
-	return playlistsList
-	
-end getMostFamousPlaylists
 
 --c--   convertFileTracks(theFileTracks)
 --d--   Convert the file tracks to the default convert Music setting.
@@ -2326,19 +2299,24 @@ end showMessageProcess
 --a--   theCount : integer -- the count of the success.
 --a--   theTotal : integer -- the total of the process.
 --x--   showReport("files processed.", theCount, theTotal)
-to showReport(theText, theCount, theTotal)
-	tell script "Math Utilities"
-		set thePercent to getPercent(theCount, theTotal)
+on showReport(theText, theCount, theTotal)
+	(*
+		tell script "Math Utilities"
+			set thePercent to getPercent(theCount, theTotal)
+		end tell
+		tell script "Number Lib"
+			set thePercent to roundToNearest(thePercent)
+		end tell
+		set strItem to "item"
+		if (theCount > 1) then
+			set strItem to strItem & "s"
+		end if
+		set theMessage to (theCount & " " & " / " & theTotal & " " & strItem & " (" & thePercent & "%) " & theText) as string
+		showMessage(theMessage)
+	*)
+	tell script "UI Utilities"
+		showMessage(theText, theCount, theTotal, "Music")
 	end tell
-	tell script "Number Lib"
-		set thePercent to roundToNearest(thePercent)
-	end tell
-	set strItem to "item"
-	if (theCount > 1) then
-		set strItem to strItem & "s"
-	end if
-	set theMessage to (theCount & " " & " / " & theTotal & " " & strItem & " (" & thePercent & "%) " & theText) as string
-	showMessage(theMessage)
 end showReport
 
 --c--   getListReport(theTracks, theFormat)

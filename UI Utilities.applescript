@@ -86,8 +86,33 @@ on showMessage(theMessage, theApp)
 	end tell
 end showMessage
 
+--c--   showReport(theText, theCount, theTotal, theApp)
+--d--   Show a message with a ratio report.
+--a--   theText : string -- The text to show.
+--a--   theCount : integer -- the count of the success.
+--a--   theTotal : integer -- the total of the process.
+--a--   theApp : string -- the app which shows the message.
+--x--   showReport("files processed.", theCount, theTotal)
+on showReport(theText, theCount, theTotal, theApp)
+	tell script "Math Utilities"
+		set thePercent to getPercent(theCount, theTotal)
+	end tell
+	tell script "Number Lib"
+		set thePercent to roundToNearest(thePercent)
+	end tell
+	set strItem to "item"
+	if (theCount > 1) then
+		set strItem to strItem & "s"
+	end if
+	set theMessage to (theCount & " " & " / " & theTotal & " " & strItem & " (" & thePercent & "%) " & theText) as string
+	showMessage(theMessage, theApp)
+end showReport
+
 on run
-	set theItems to {"toto", "tata", "titi"}
-	set theObjs to {"toto"}
-	getObjItems(theItems, theObjs)
+	(*
+		set theItems to {"toto", "tata", "titi"}
+		set theObjs to {"toto"}
+		getObjItems(theItems, theObjs)
+	*)
+	my showReport("Test", 19, 100, "Music")
 end run
