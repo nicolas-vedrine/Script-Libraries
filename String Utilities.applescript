@@ -351,7 +351,7 @@ property _timeUtilities_ : "Time Utilities.scpt"
 property _uiUtilities_ : "UI Utilities.scpt"
 property _xmlUtilities_ : "XML Utilities.scpt"
 
-on loadScriptFromLibrary(theScriptName)
+on loadScriptFromMe(theScriptName)
 	tell application "Finder"
 		set theMe to get path to me
 		set theParent to container of the result as string
@@ -359,13 +359,13 @@ on loadScriptFromLibrary(theScriptName)
 		set theScript to (load script file theScriptPath)
 		return theScript
 	end tell
-end loadScriptFromLibrary
+end loadScriptFromMe
 
 on run
 	--return my trim("    C'o-Pilot    ")
 	(*
 		tell application "Finder"
-			set theScript to my loadScriptFromLibrary(my _listLib_)
+			set theScript to my loadScriptFromMe(my _listLib_)
 			return (myName of theScript)
 		end tell
 	*)

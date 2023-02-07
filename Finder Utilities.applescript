@@ -28,7 +28,7 @@ end getFileName
 to getFileNameWithoutExtension(theAlias)
 	set theName to my getFileName(theAlias)
 	set theExtension to my getFileExtension(theAlias)
-	set strUtils to loadScriptFromLibrary("String Utilities.scpt")
+	set strUtils to loadScriptFromMe("String Utilities.scpt")
 	tell strUtils
 		set theFileName to removeChars(theName, _strBack_ of strUtils, (count of theExtension) + 1)
 	end tell
@@ -236,7 +236,7 @@ to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
 	return theList
 end findFiles
 
-on loadScriptFromLibrary(theScriptName)
+on loadScriptFromMe(theScriptName)
 	tell application "Finder"
 		set theMe to get path to me
 		set theParent to container of the result as string
@@ -244,7 +244,7 @@ on loadScriptFromLibrary(theScriptName)
 		set theScript to (load script file theScriptPath)
 		return theScript
 	end tell
-end loadScriptFromLibrary
+end loadScriptFromMe
 
 on run
 	--set thePath to "/Volumes/DATA/conmeubonailleuco/Vidéos/Projet/Black Sargass/RUSH/2020-07-21 - Répète/Fusion/Back"
