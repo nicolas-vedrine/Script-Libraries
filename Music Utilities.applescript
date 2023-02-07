@@ -85,7 +85,45 @@ The Music Utilities contains a bunch of functions to search, retreive and manipu
 use AppleScript version "2.4" -- Yosemite (10.10) or later
 use scripting additions
 
-property _albumNamePropertiesList_ : {"unknown album", "album inconnu", ""}
+property _albumNamePropertiesList_ : {{locale:"fr_FR", label:"album inconnu"}, {locale:"en_EN", label:"unknown album"}, {locale:"en_US", label:"unknown album"}, ""}
+
+property _fromMe_ : 0
+property _fromScriptLibrary_ : 1
+property _fromUserLibrary_ : 2
+
+on loadScript(theFrom, theScriptName)
+	if theFrom = my _fromMe_ then
+		tell application "Finder"
+			set theMe to get path to me
+			set theParent to container of the result as string
+			set theScriptPath to theParent & theScriptName
+		end tell
+	else if theFrom = my _fromScriptLibrary_ then
+		set thePath to path to library folder as string
+		set theScriptPath to thePath & "Script Libraries:" & theScriptName
+	else if theFrom = my _fromUserLibrary_ then
+		set thePath to path to library folder from user domain as string
+		set theScriptPath to thePath & "Scripts:" & theScriptName
+	end if
+	log theScriptPath
+	set theScript to (load script file theScriptPath)
+	return theScript
+end loadScript
+
+property _fileAndFolderLib_ : "File and Folder Lib.scpt"
+property _finderUtilities_ : "Finder Utilities.scpt"
+property _listLib_ : "List Lib.scpt"
+property _listUtilities_ : "List Utilities.scpt"
+property _mathUtilities_ : "Math Utilities.scpt"
+property _mediaUtilities_ : "Media Utilities.scpt"
+property _musicUtilities_ : "Music Utilities.scpt"
+property _numberLib_ : "Number Lib.scpt"
+property _renameWebFriendly_ : "Rename Web Friendly.scpt"
+property _stringLib_ : "String Lib.scpt"
+property _stringUtilities_ : "String Utilities.scpt"
+property _timeUtilities_ : "Time Utilities.scpt"
+property _uiUtilities_ : "UI Utilities.scpt"
+property _xmlUtilities_ : "XML Utilities.scpt"
 
 ---------------------- Retreiving ----------------------
 
@@ -234,7 +272,10 @@ to getPlaylistTracks(thePlaylist, limit)
 		repeat with i from tc to 1 by -1
 			set theTrack to item i of tracksList
 			
-			set trackSize to my convertByteSize(size of theTrack, 1024, 1)
+			tell script "Finder Utilities"
+				set trackSize to convertByteSize(size of theTrack, 1024, 1)
+			end tell
+			
 			if megaBitesSize > limit then
 				exit repeat
 			else
@@ -561,54 +602,53 @@ to getAlbumTracks(theArtistName, theAlbumName)
 	end tell
 end getAlbumTracks
 
-to searchForASimilarTrack(theTrack) -- TODO
+--c--   searchForASimilarTrack(theTrack)
+--d--   Search for a similar track (same artist and album name) and return the result.
+--a--   theTrack : track -- the track to search for its similar track.
+--r--   track
+--x--   searchForASimilarTrack(track) --> track
+to searchForASimilarTrack(theTrack)
 	tell application "Music"
-		set trackFound to my searchTrack(theTrack, name of theTrack as string)
-		--		log "searchForASimilarTrack : " & trackFound as string
-		set trackName to name of trackFound
-		set artistName to artist of trackFound
-		set albumName to album of trackFound
-		if (albumName = "") then
-			set str to ("\"" & trackName & "\"" & " by " & artistName & " in unknown album")
-		else
-			set str to ("\"" & trackName & "\"" & " by " & artistName & " in " & albumName)
-		end if
-		set dialogResult to display dialog ¬
-			"Track found : " & str ¬
-			buttons {"Cancel", "OK"} ¬
-			default button "OK" cancel button ¬
-			"Cancel" with icon 1
-		return trackFound
+		set theTrackFound to my searchTrack(theTrack, name of theTrack as string)
+		set theMessage to "Track found : " & my getFormattedTrackName(theTrackFound, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+		tell script "UI Utilities"
+			showMessage(theMessage, "Music")
+		end tell
+		return theTrackFound
 	end tell
 end searchForASimilarTrack
 
-to searchTrack(theTrack, trackName) -- TODO
+--c--   searchTrack(theTrack, theTrackName)
+--d--   Search for a track with a track name. The track is excluded from the results. If no track is found, it is searched again & again.
+--a--   theTrack : track -- the track to search.
+--r--   track
+--x--   searchForASimilarTrack(track) --> track
+to searchTrack(theTrack, theTrackName)
 	set theList to {}
 	tell application "Music"
-		set artistName to artist of theTrack
 		set dbid to database ID of theTrack
-		set results to every file track whose name contains trackName and database ID is not dbid
-		--display dialog (count of results)
+		set theList to every file track whose name contains theTrackName and database ID is not dbid
 		set trackFound to ""
 		
-		repeat with res in results
-			if my isInMusicBox(res) then
-				copy contents of res to the end of theList
-			end if
-		end repeat
+		log "searchTrack : (count of theList) = " & (count of theList)
 		
-		set listLength to length of theList
-		--display dialog "listLength : " & listLength
+		set listLength to count of theList
 		if (listLength is 0) then
 			set dialogResult to display dialog ¬
-				"No track found, search manually ?" buttons {"Cancel", "OK"} ¬
+				"No track found. Search manually ?" buttons {"Cancel", "OK"} ¬
 				default button "OK" cancel button ¬
-				"Cancel" default answer (trackName) ¬
+				"Cancel" default answer (name of theTrack as string) ¬
 				with icon 1
 			set trackFound to my searchTrack(theTrack, text returned of dialogResult)
 		else
 			if (listLength > 1) then
-				set trackFound to my moreThanOneResult(theList)
+				set theChoice to my getChooseList(theList, false)
+				if theChoice is false then
+					set trackFound to null
+				else
+					set theIndex to word 1 of (item 1 of theChoice as string)
+					set trackFound to item theIndex of theList
+				end if
 			else
 				set trackFound to item 1 of theList
 			end if
@@ -617,13 +657,15 @@ to searchTrack(theTrack, trackName) -- TODO
 	end tell
 end searchTrack
 
-to moreThanOneResult(theList) -- TODO
-	set choice to getChooseList(theList, false)
-	if choice is not false then
-		set selectedIndex to word 1 of (item 1 of choice as string)
-		return item selectedIndex of theList
-	end if
-end moreThanOneResult
+(*
+	to moreThanOneResult(theList) -- TODO
+		set choice to getChooseList(theList, false)
+		if choice is not false then
+			set selectedIndex to word 1 of (item 1 of choice as string)
+			return item selectedIndex of theList
+		end if
+	end moreThanOneResult
+*)
 
 
 ---------------------- Manipulating ----------------------
@@ -699,11 +741,12 @@ to combineTracksProperties(theOriginalTrack, theTrackToCombine)
 		set played count of theTrackToCombine to ((played count of theTrackToCombine) + (played count of theOriginalTrack))
 		set lovedtheOriginalTrack to loved of theOriginalTrack
 		set loved of theTrackToCombine to lovedtheOriginalTrack
-		if (played date of theTrackToCombine < played date of theOriginalTrack or played date of theTrackToCombine is missing value) then
-			set playedDate to played date of theOriginalTrack
-			set played date of theTrackToCombine to playedDate
+		if played date of theOriginalTrack is not missing value then
+			if (played date of theTrackToCombine < played date of theOriginalTrack or played date of theTrackToCombine is missing value) then
+				set playedDate to played date of theOriginalTrack
+				set played date of theTrackToCombine to playedDate
+			end if
 		end if
-		set comment of theTrackToCombine to "combined"
 	end tell
 end combineTracksProperties
 
@@ -760,8 +803,8 @@ to fixSortAlbum(theTracks, showMessage)
 	return theList
 end fixSortAlbum
 
-to getTrackNameProperties(strType) -- TODO
-	set strUtilities to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
+to getTrackNameProperties(strType)
+	set strUtilities to my loadScript(my _fromMe_, my _stringUtilities_)
 	tell strUtilities
 		set theList to {getStrNone()}
 		if (strType is my _strTrackName_) then
@@ -1535,7 +1578,7 @@ end getAlbumNamePropertiesList
 --a--   strDescription : string -- A string to describe the current task
 --a--   strAdditionalDescription : string -- A string to describe an additional description.
 --x--   showProgress(2, 15, "In progress...", "")
-to showProgress(current, total, strDescription, strAdditionalDescription) -- TODO To move.
+to showProgress(current, total, strDescription, strAdditionalDescription)
 	tell script "UI Utilities"
 		showProgress(current, total, current & " / " & total & " - " & strDescription, strAdditionalDescription)
 	end tell
@@ -1554,7 +1597,9 @@ on checkIfMaxSize(thePlaylist, theMaxSize) -- TODO --> bug with playlist with mo
 		--display dialog "toto" & playlistSize as string
 		set sizeOfThePlaylist to 0
 		if playlistSize is greater than 0 then
-			set sizeOfThePlaylist to my convertByteSize(playlistSize, 1024, 2) as number
+			tell script "Finder Utilities"
+				set sizeOfThePlaylist to convertByteSize(playlistSize, 1024, 2) as number
+			end tell
 		end if
 		log "checkIfMaxSize : sizeOfThePlaylist = " & sizeOfThePlaylist
 		log "checkIfMaxSize : theMaxSize = " & theMaxSize
@@ -1563,22 +1608,24 @@ on checkIfMaxSize(thePlaylist, theMaxSize) -- TODO --> bug with playlist with mo
 end checkIfMaxSize
 
 -- TODO >>> déplacer la fonction dans script perso
-to createNewJukeBoxPlaylist()
-	set jukeBoxFolder to item 1 of getFolderPlaylistByName("Juke Box")
-	tell application "Music"
-		set collectPlaylists to {}
-		repeat with p in (get every playlist)
-			try
-				if (get parent of p) is jukeBoxFolder then set end of collectPlaylists to p
-			end try
-		end repeat
-		set ct to count of collectPlaylists
-		set newJukeBoxPlaylist to make new user playlist with properties {name:"Juke Box " & (ct + 1)}
-		move newJukeBoxPlaylist to jukeBoxFolder
-		log (name of newJukeBoxPlaylist) as text
-		return newJukeBoxPlaylist
-	end tell
-end createNewJukeBoxPlaylist
+(*
+	to createNewJukeBoxPlaylist()
+		set jukeBoxFolder to item 1 of getFolderPlaylistByName("Juke Box")
+		tell application "Music"
+			set collectPlaylists to {}
+			repeat with p in (get every playlist)
+				try
+					if (get parent of p) is jukeBoxFolder then set end of collectPlaylists to p
+				end try
+			end repeat
+			set ct to count of collectPlaylists
+			set newJukeBoxPlaylist to make new user playlist with properties {name:"Juke Box " & (ct + 1)}
+			move newJukeBoxPlaylist to jukeBoxFolder
+			log (name of newJukeBoxPlaylist) as text
+			return newJukeBoxPlaylist
+		end tell
+	end createNewJukeBoxPlaylist
+*)
 
 -- TODO >>> déplacer la fonction dans script perso
 to moveTracksToLastJukeBoxPlaylist()
@@ -1589,7 +1636,9 @@ to moveTracksToLastJukeBoxPlaylist()
 	else
 		tell application "Music"
 			set playlistSize to (size of lastJukeBoxPlaylist)
-			set sizeOfThePlaylist to my convertByteSize(playlistSize, 1024, 1)
+			tell script "Finder Utilities"
+				set sizeOfThePlaylist to convertByteSize(playlistSize, 1024, 1)
+			end tell
 			set limit to sizeOfThePlaylist - 700
 			set theList to my getPlaylistTracks(lastJukeBoxPlaylist, limit, "fromEnd")
 			set newJukeBoxPlaylist to my createNewJukeBoxPlaylist()
@@ -1628,11 +1677,13 @@ on isCompilation(theTracks) -- TODO --> to check...
 end isCompilation
 
 -- TODO : to remove
-on convertByteSize(byteSize, KBSize, decPlaces)
-	tell script "Finder Utilities"
-		return convertByteSize(byteSize, KBSize, decPlaces)
-	end tell
-end convertByteSize
+(*
+	on convertByteSize(byteSize, KBSize, decPlaces)
+		tell script "Finder Utilities"
+			return convertByteSize(byteSize, KBSize, decPlaces)
+		end tell
+	end convertByteSize
+*)
 
 --c--   showMessage(theMessage)
 --d--   Show a message with default parameters.
@@ -1688,7 +1739,7 @@ on isInPlaylist(theTrack, thePlaylist)
 end isInPlaylist
 
 --c--   getChooseList(theTracks, isMultipleSelections)
---d--   Get a choose from list UI with a list of tracks.
+--d--   Get a choise from list UI with a list of tracks.
 --a--   theTracks : tracks -- The tracks.
 --a--   isMultipleSelections : boolean -- true if a multiple selection is allowed, false if not.
 --r--   list : list -- List of tracks selected.
@@ -1750,19 +1801,25 @@ end getFormattedTrackName
 --x--   getFormattedAlbumName("") --> "unknown album"
 on getFormattedAlbumName(albumName)
 	if (albumName = "") then
-		return item 1 of my _albumNamePropertiesList_ -- TODO get the OS language
+		repeat with theItem in my _albumNamePropertiesList_
+			if locale of theItem is equal to user locale of (get system info) then
+				return label of theItem
+			end if
+		end repeat
 	else
 		return albumName
 	end if
 end getFormattedAlbumName
 
 -- TODO >>> déplacer la fonction dans script perso
-on isInMusicBox(theTrack)
-	tell application "Music"
-		set plMusicBox to (item 1 of (get every user playlist whose smart is true and name is equal to "Music Box"))
-		return my isInPlaylist(theTrack, plMusicBox)
-	end tell
-end isInMusicBox
+(*
+	on isInMusicBox(theTrack)
+		tell application "Music"
+			set plMusicBox to (item 1 of (get every user playlist whose smart is true and name is equal to "Music Box"))
+			return my isInPlaylist(theTrack, plMusicBox)
+		end tell
+	end isInMusicBox
+*)
 
 --c--   isAlbumsArtistAlreadyExists(theArtist, theAlbum)
 --d--   Return a boolean to know if an album of an artist is already in the library.
@@ -2188,7 +2245,7 @@ on exportSelectedTracksToSpecificFolder(theTracks, theDestination) -- TODO --> f
 												end if
 											end repeat
 										else
-											return
+											return null
 										end if
 									else
 										if isYesRemember then
@@ -2396,9 +2453,13 @@ end testGetListReport
 
 on run
 	
+	my testExportSelectedTracksToSpecificFolder()
+	
 	--my testGetListReport()
 	
-	return my testGetChoosenPlaylistFromTree()
+	--return my testSearchForASimilarTrack()
+	
+	--return my getFormattedAlbumName("")
 	
 	(*
 		set thePlaylist to my testGetChoosenPlaylist()
@@ -2515,9 +2576,15 @@ to testAddTrackToPlaylist()
 	return my addTrackToPlaylist(theTrack, thePlaylist)
 end testAddTrackToPlaylist
 
+to testSearchTrack()
+	set theTrack to item 1 of my getSelectedTracks(true)
+	set theTrackFound to my searchTrack(theTrack, name of theTrack as string)
+	return theTrackFound
+end testSearchTrack
+
 to testSearchForASimilarTrack()
 	tell application "Music"
-		set theCurrentTrack to my getCurrentTrack(false)
+		set theCurrentTrack to item 1 of my getSelectedTracks(true)
 		my searchForASimilarTrack(theCurrentTrack)
 	end tell
 end testSearchForASimilarTrack
@@ -2614,8 +2681,7 @@ to testExportSelectedTracksToSpecificFolder()
 	
 	set theMsg to "Process terminé pour " & (count of theList) & " tracks, " & (count of theErrorList) & " (" & thePercent & "%."
 	if theCountError > 0 then
-		set theMsg to theMsg & "
-	See errors ?"
+		set theMsg to theMsg & "See errors ?"
 	else
 		
 	end if
