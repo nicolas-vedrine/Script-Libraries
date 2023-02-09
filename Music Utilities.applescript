@@ -1739,7 +1739,7 @@ on isInPlaylist(theTrack, thePlaylist)
 end isInPlaylist
 
 --c--   getChooseList(theTracks, isMultipleSelections)
---d--   Get a choise from list UI with a list of tracks.
+--d--   Get a choice from list UI with a list of tracks.
 --a--   theTracks : tracks -- The tracks.
 --a--   isMultipleSelections : boolean -- true if a multiple selection is allowed, false if not.
 --r--   list : list -- List of tracks selected.
@@ -1830,11 +1830,7 @@ end getFormattedAlbumName
 to isAlbumsArtistAlreadyExists(theArtist, theAlbum)
 	tell application "Music"
 		set theTracks to get every track where the artist is theArtist and album is theAlbum
-		if (count of theTracks) > 0 then
-			return true
-		else
-			return false
-		end if
+		return count of theTracks > 0
 	end tell
 end isAlbumsArtistAlreadyExists
 
