@@ -2,7 +2,7 @@ use AppleScript version "2.4" -- Yosemite (10.10) or later
 use framework "Foundation"
 use scripting additions
 
-to getItemByData(theList, theData)
+on getItemByData(theList, theData)
 	repeat with theItem in theList
 		if (theData is equal to theData of theItem) then
 			return theItem
@@ -11,12 +11,19 @@ to getItemByData(theList, theData)
 	return null
 end getItemByData
 
-to getItemByLabel(theList, theLabel)
+on getItemIndexByData(theList, theData)
+	set i to 1
 	repeat with theItem in theList
-		(*
-			display dialog theLabel as text
-			display dialog theLabel of theItem as text
-		*)
+		if (theData is equal to theData of theItem) then
+			return i
+		end if
+		set i to i + 1
+	end repeat
+	return null
+end getItemIndexByData
+
+on getItemByLabel(theList, theLabel)
+	repeat with theItem in theList
 		if (theLabel as text is equal to theLabel of theItem as text) then
 			return theItem
 		end if
@@ -24,7 +31,7 @@ to getItemByLabel(theList, theLabel)
 	return null
 end getItemByLabel
 
-to flattenList(theList, theRecursiveList, theLevel)
+on flattenList(theList, theRecursiveList, theLevel)
 	if theRecursiveList is not null then
 		set theNewList to theRecursiveList
 	else

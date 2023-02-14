@@ -1,3 +1,20 @@
+--
+--	Created by: Nicolas VEDRINE
+--	Created on: in 2018
+--
+--	Copyright © 2018, All Rights Reserved
+--
+
+(*
+-------------------------------- UI Utilities (formely iTunes Utilities) --------------------------------
+
+The UI Utilities contains a bunch of functions to show dialog boxes and retreive the result of the interaction with the user.
+
+--d-- Last modification date:                                                             25/01/2023
+
+--------------------------- LIST OF FUNCTIONS ---------------------------
+*)
+
 use AppleScript version "2.4" -- Yosemite (10.10) or later
 use framework "Foundation"
 use scripting additions
@@ -18,22 +35,40 @@ on getUIItems(theItems)
 	set theList to {}
 	set i to 1
 	repeat with theItem in theItems
+		set theStr to i & " - "
 		set theLabel to theLabel of item i of theItems
-		set the end of theList to theLabel
+		if class of theLabel is record then
+			set theStr to theStr & my getLocaleItem(theLabel)
+		else
+			set theStr to theStr & theLabel
+			--set the end of theList to theLabel
+		end if
+		set the end of theList to theStr as string
 		set i to i + 1
 	end repeat
 	return theList
 end getUIItems
 
+on getLocaleItem(theItem)
+	set objCDictionary to (current application's NSDictionary's dictionaryWithDictionary:theItem)
+	set allKeys to objCDictionary's allKeys()
+	
+	repeat with theKey in allKeys
+		set theKey to theKey as string
+		set theLocale to (user locale of (get system info)) as string
+		if theKey = (user locale of (get system info) as string) then
+			return (objCDictionary's valueForKey:theKey) as string
+		end if
+	end repeat
+end getLocaleItem
+
+-- TODO » getLocaleFromList
+
 on getObjItems(theItems, theObjs)
-	--display dialog "toto"
 	set theList to {}
 	repeat with theItem in theItems
 		repeat with theObj in theObjs
-			--display dialog theItem
-			--display dialog theObj
 			if theItem as string is equal to theLabel of theObj as string then
-				--display dialog "toto"
 				set the end of theList to theObj
 			end if
 		end repeat
@@ -108,11 +143,55 @@ on showReport(theText, theCount, theTotal, theApp)
 	showMessage(theMessage, theApp)
 end showReport
 
+on getPromptList(theObjs, thePromptsList, theDefaultData)
+	set thePromptText to getLocaleItem(thePromptsList)
+	
+	tell script "List Utilities"
+		set theDefaultItem to getItemByData(theObjs, theDefaultData)
+		set theDefaultItemIndex to getItemIndexByData(theObjs, theDefaultData)
+	end tell
+	
+	set theDefaultItem to (theDefaultItemIndex as string) & " - " & my getLocaleItem(theLabel of theDefaultItem)
+	set theChoicesPrompt to my getUIItems(theObjs)
+	
+	set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theDefaultItem
+	if theChoice is not false then
+		set theSelectedIndex to word 1 of (theChoice as string)
+		set theSelectedData to theData of item theSelectedIndex of theObjs
+		return theSelectedData
+	end if
+	
+	return theChoice
+	
+end getPromptList
+
+property _promptSelectItemList_ : {fr_FR:"Sélectionnez un élément :", en_EN:"Select an item :", en_US:"Select an item :"}
+
 on run
 	(*
-		set theItems to {"toto", "tata", "titi"}
-		set theObjs to {"toto"}
-		getObjItems(theItems, theObjs)
+		set theObjs to {{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"current"}, {theLabel:{fr_FR:"Playlist", en_EN:"Playlist", en_US:"Playlist"}, theData:"playlist"}, {theLabel:{fr_FR:"Sélectionnées", en_EN:"Selected", en_US:"Selected"}, theData:"selected"}}
+		set thePromptText to getLocaleItem(_promptSelectItemList_)
+		
+		tell script "List Utilities"
+			set theDefaultData to "playlist"
+			set theDefaultItem to getItemByData(theObjs, theDefaultData)
+			set theDefaultItemIndex to getItemIndexByData(theObjs, theDefaultData)
+		end tell
+		
+		tell script "UI Utilities"
+			set theDefaultItem to (theDefaultItemIndex as string) & " - " & getLocaleItem(theLabel of theDefaultItem)
+			set theChoicesPrompt to getUIItems(theObjs)
+		end tell
+		
+		set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theDefaultItem
+		if theChoice is not false then
+			set theSelectedIndex to word 1 of (theChoice as string)
+			set theSelectedData to theData of item theSelectedIndex of theObjs
+			return theSelectedData
+		end if
 	*)
-	my showReport("Test", 19, 100, "Music")
+	
+	set theObjs to {{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"current"}, {theLabel:{fr_FR:"Playlist", en_EN:"Playlist", en_US:"Playlist"}, theData:"playlist"}, {theLabel:{fr_FR:"Sélectionnées", en_EN:"Selected", en_US:"Selected"}, theData:"selected"}}
+	return my getPromptList(theObjs, my _promptSelectItemList_, "selected")
+	
 end run

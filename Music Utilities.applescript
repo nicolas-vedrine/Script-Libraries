@@ -86,6 +86,7 @@ use AppleScript version "2.4" -- Yosemite (10.10) or later
 use scripting additions
 
 property _albumNamePropertiesList_ : {{locale:"fr_FR", label:"album inconnu"}, {locale:"en_EN", label:"unknown album"}, {locale:"en_US", label:"unknown album"}, ""}
+property _promptSelectItemList_ : {fr_FR:"Sélectionnez un élément :", en_EN:"Select an item :", en_US:"Select an item :"}
 
 property _fromMe_ : 0
 property _fromScriptLibrary_ : 1
@@ -198,16 +199,29 @@ end getDBIDTracks
 --x--   getDialogTracksKind(isDBIDTracks) --> {track 1, track 2, track n, ...}
 to getDialogTracksKind(isDBIDTracks)
 	tell application "Music"
-		set dialogResult to display dialog ¬
-			"Choose your track : " buttons {"Cancel", "Current", "Selected"} ¬
-			default button "Selected" cancel button ¬
-			"Cancel" with icon 1
-		if button returned of dialogResult is "Selected" then
-			set theTracks to my getSelectedTracks(isDBIDTracks)
-		else
-			set theTracks to {my getCurrentTrack(isDBIDTracks)}
+		set theObjs to {{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"current"}, {theLabel:{fr_FR:"Playlist", en_EN:"Playlist", en_US:"Playlist"}, theData:"playlist"}, {theLabel:{fr_FR:"Sélectionnées", en_EN:"Selected", en_US:"Selected"}, theData:"selected"}}
+		tell script "UI Utilities"
+			set theSelectedData to getPromptList(theObjs, my _promptSelectItemList_, "selected")
+		end tell
+		if theSelectedData is not false then
+			if theSelectedData is "current" then
+				set theTracks to {my getCurrentTrack(isDBIDTracks)}
+			else if theSelectedData is "playlist" then
+				if isDBIDTracks then
+					set theTracks to my getDBIDTracks(tracks of my getChoosenPlaylistFromTree())
+				else
+					set theChoice to my getChoosenPlaylistFromTree()
+					if theChoice is false then
+						return
+					end if
+					set theTracks to tracks of theChoice
+				end if
+			else if theSelectedData is "selected" then
+				set theTracks to my getSelectedTracks(isDBIDTracks)
+			end if
+			
+			return theTracks
 		end if
-		return theTracks
 	end tell
 end getDialogTracksKind
 
@@ -288,6 +302,31 @@ to getPlaylistTracks(thePlaylist, limit)
 end getPlaylistTracks
 
 ---------- GET TREE PLAYLISTS START ----------
+
+on getChoosenPlaylistFromTree()
+	try
+		set thePlaylists to my getAllPlaylists()
+		set theCount to count of thePlaylists
+		
+		set thePlaylistsTree to my getPlaylistsTree(thePlaylists, theCount)
+		
+		tell script "List Utilities"
+			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
+		end tell
+		
+		set theChoice to my showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
+		log "getChoosenPlaylistFromTree : theChoice = " & theChoice
+		
+		if theChoice is not false then
+			set thePlaylist to my getChoosenPlaylist(theChoice, theFlattenPlaylists)
+			return thePlaylist
+		end if
+		return theChoice
+	on error errorMessage number errorNumber
+		display dialog errorMessage & " - errorNumber : " & errorNumber
+	end try
+	return ""
+end getChoosenPlaylistFromTree
 
 --c--   getPlaylistsTree(thePlaylists, theLength)
 --d--   Get the playlists tree, like the one in Music. See testGetChoosenPlaylistFromTree() to test.
@@ -474,9 +513,9 @@ to getSelectedTracks(isDBIDTracks)
 	tell application "Music"
 		set theTracks to (get selection)
 		if (count of theTracks) = 0 then
-			display dialog "No track selected." buttons {"Ok"} ¬
-				default button 1 ¬
-				with icon 1
+			tell script "UI Utilities"
+				showMessage("No track selected.", "Music")
+			end tell
 		end if
 		if (isDBIDTracks) then
 			return my getDBIDTracks(theTracks)
@@ -1830,7 +1869,7 @@ end getFormattedAlbumName
 to isAlbumsArtistAlreadyExists(theArtist, theAlbum)
 	tell application "Music"
 		set theTracks to get every track where the artist is theArtist and album is theAlbum
-		return count of theTracks > 0
+		return (count of theTracks) > 0
 	end tell
 end isAlbumsArtistAlreadyExists
 
@@ -2449,7 +2488,7 @@ end testGetListReport
 
 on run
 	
-	my testExportSelectedTracksToSpecificFolder()
+	set theTracks to my getDialogTracksKind(false)
 	
 	--my testGetListReport()
 	
@@ -2699,28 +2738,7 @@ to testExportSelectedTracksToSpecificFolder()
 end testExportSelectedTracksToSpecificFolder
 
 to testGetChoosenPlaylistFromTree()
-	try
-		set thePlaylists to my getAllPlaylists()
-		set theCount to count of thePlaylists
-		--set theCount to 20
-		
-		set thePlaylistsTree to my getPlaylistsTree(thePlaylists, theCount)
-		
-		tell script "List Utilities"
-			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
-		end tell
-		
-		set theChoice to my showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
-		log theChoice
-		
-		if theChoice is not false then
-			set thePlaylist to my getChoosenPlaylist(theChoice, theFlattenPlaylists)
-			return thePlaylist
-		end if
-	on error errorMessage number errorNumber
-		display dialog errorMessage & " - errorNumber : " & errorNumber
-	end try
-	return ""
+	my getChoosenPlaylistFromTree()
 end testGetChoosenPlaylistFromTree
 
 to testFixDeadTracks()
