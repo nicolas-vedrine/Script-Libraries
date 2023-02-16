@@ -6,7 +6,7 @@
 --
 
 (*
--------------------------------- MUSIC UTILITIES (FORMELY iTUNES UTILITIES) --------------------------------
+-------------------------------- Music Utilities (formely iTunes Utilities) --------------------------------
 
 The Music Utilities contains a bunch of functions to search, retreive and manipulate tracks, playlists in the Music Library
 
@@ -1085,7 +1085,7 @@ to downloadArtworkWithGoogle(theList) -- TODO
 	tell application "Finder"
 		set theHomePath to home as alias
 		tell script "Finder Utilities"
-			set theWorkflow to convertPathToPOSIXString(theHomePath) & "Library/Mobile Documents/com~apple~Automator/Documents/Download iTunes Artwork.workflow"
+			set theWorkflow to convertAliasToPOSIXString(theHomePath) & "Library/Mobile Documents/com~apple~Automator/Documents/Download iTunes Artwork.workflow"
 		end tell
 	end tell
 	
@@ -1523,14 +1523,14 @@ Are you sure ?" buttons {"Cancel", "No", "Yes"} ¬
 				if button returned of dialogResult is "Yes" then
 					set theAnswer to true
 					tell script "Finder Utilities"
-						return convertPathToPOSIXString(theFile)
+						return convertAliasToPOSIXString(theFile)
 					end tell
 				else if button returned of dialogResult is "No" then
 					
 				end if
 			else
 				tell script "Finder Utilities"
-					return convertPathToPOSIXString(theFile)
+					return convertAliasToPOSIXString(theFile)
 				end tell
 			end if
 		end repeat
@@ -2162,15 +2162,10 @@ to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 			display dialog "exportFileToSpecificFolder : error = " & " impossible de créer le dosier. --- " & theCommand
 			return ""
 		end try
-		(*
-				set theFilePath to quoted form of convertPathToPOSIXString(theFileTrack)
-				set theFolderPath to quoted form of convertPathToPOSIXString(theFolder)
-				set theFileName to getFileName(theFileTrack)
-			*)
+		
 		set theDestinationFile to theNewFolder & "/" & theFileName
 		set theCommand to "cp " & quoted form of theFileTrack & " " & quoted form of theDestinationFile
 		set theFinalPath to (theDestination & theFolderName & ":" & theFileName as string)
-		--display dialog isItemExists(theFinalPath) as string
 		log "exportFileToSpecificFolder : theCommand = " & theCommand
 		try
 			set theReturned to do shell script theCommand
@@ -2179,15 +2174,6 @@ to exportFileToSpecificFolder(theFileTrack, theDestination, replaceFile)
 			display dialog "exportFileToSpecificFolder : error with theCommand = " & theCommand
 			return ""
 		end try
-		(*
-				if (isItemExists(theFinalPath)) then
-					if replaceFile then
-						do shell script theCommand
-					end if
-				else
-					do shell script theCommand
-				end if
-			*)
 	end tell
 	set theErrorStr to "error with : " & theFileTrack
 	--copy theTrack to the end of theErrorList
@@ -2229,8 +2215,8 @@ on exportSelectedTracksToSpecificFolder(theTracks, theDestination) -- TODO --> f
 							tell finderUtils
 								set theFolderName to my getiTunesFolderName(theFileTrack)
 								set theFolder to createFolder(theDestination, theFolderName)
-								set theFilePath to quoted form of convertPathToPOSIXString(theFileTrack)
-								set theFolderPath to quoted form of convertPathToPOSIXString(theFolder)
+								set theFilePath to quoted form of convertAliasToPOSIXString(theFileTrack)
+								set theFolderPath to quoted form of convertAliasToPOSIXString(theFolder)
 								set theFileName to getFileName(theFileTrack)
 								set theCommand to "cp " & theFilePath & " " & theFolderPath
 								set theFinalPath to (theDestination & theFolderName & ":" & theFileName as string)
@@ -2487,33 +2473,13 @@ to testGetListReport()
 end testGetListReport
 
 on run
-	
-	set theTracks to my getDialogTracksKind(false)
-	
-	--my testGetListReport()
-	
-	--return my testSearchForASimilarTrack()
-	
-	--return my getFormattedAlbumName("")
-	
-	(*
-		set thePlaylist to my testGetChoosenPlaylist()
-		if thePlaylist is not equal to "" then
-			tell application "Music"
-				activate
-				if (count of tracks of thePlaylist) > 0 then
-					play thePlaylist
-					reveal current track
-				else
-					display dialog "No track in playlist " & name of thePlaylist & "."
-				end if
-			end tell
-		end if
-	*)
-	
-	--my testGetTracksByDBID()
-	
-	
+	set thePlaylist to item 1 of my getPlaylistByName("Music Box")
+	tell application "Music"
+		set theSize to size of thePlaylist
+		tell script "Finder Utilities"
+			return convertBytesToString(theSize, "MB", true)
+		end tell
+	end tell
 end run
 
 ------- UNIT TESTS -------
@@ -2531,8 +2497,8 @@ to testExportFileToSpecificFolder()
 	end tell
 	set theFolder to choose folder with prompt "Please select a folder to process :"
 	tell script "Finder Utilities"
-		set theFileTrack to convertPathToPOSIXString(theLocation)
-		set theDest to convertPathToPOSIXString(theFolder)
+		set theFileTrack to convertAliasToPOSIXString(theLocation)
+		set theDest to convertAliasToPOSIXString(theFolder)
 	end tell
 	return my exportFileToSpecificFolder(theFileTrack, theDest, true)
 end testExportFileToSpecificFolder

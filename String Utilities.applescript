@@ -330,7 +330,7 @@ to testReplaceChars()
 end testReplaceChars
 
 to testLongestPart()
-	set theStr to "l'aziza"
+	set theStr to "l'a'ziza'sddfgggttyyyyy"
 	set theDel to "'"
 	set theLongestPart to my getLongestPart(theStr, theDel)
 	return theLongestPart
@@ -369,8 +369,5 @@ on run
 			return (myName of theScript)
 		end tell
 	*)
-	set theFileName to "Music Utilities.applescript"
-	set theExt to "applescript"
-	set theFileNameWithout to removeChars(theFileName, my _strBack_, (count of theExt) + 1)
-	return theFileNameWithout
+	my testLongestPart()
 end run
