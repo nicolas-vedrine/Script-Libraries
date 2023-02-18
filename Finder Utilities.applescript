@@ -265,7 +265,7 @@ end findFiles
 --d--   Return the disk of the file - folder.
 --a--   theAlias : alias -- The alias to get its disk.
 --r--   disk -- The disk of theAlias
---x--   convertBytesToString(368710421, true) --> "368,7 Mo (368 710 421 octets)"
+--x--   convertBytesToString(368710421, true) --> "368,7 Mo (368 710 421 octets)" -- TODO
 to getAliasDisk(theAlias)
 	tell application "Finder"
 		set theDisk to disk of theAlias
