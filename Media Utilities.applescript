@@ -10,8 +10,6 @@
 
 The Media Utilities contains a bunch of functions to get media infos and encode media files.
 
---d-- Last modification date:                                                             25/01/2023
-
 --------------------------- LIST OF FUNCTIONS ---------------------------
 
 

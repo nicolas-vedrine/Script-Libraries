@@ -1,3 +1,25 @@
+--
+--	Created by: Nicolas VEDRINE
+--	Created on: in 2018
+--
+--	Copyright © 2018, All Rights Reserved
+--
+
+(*
+-------------------------------- XML Utilities --------------------------------
+
+The XML Utilities contains a bunch of functions to manipulate XML.
+
+--------------------------- LIST OF FUNCTIONS ---------------------------
+
+-- TODO
+
+*)
+
+use AppleScript version "2.4" -- Yosemite (10.10) or later
+use framework "Foundation"
+use scripting additions
+
 to getXMLData(XMLText)
 	tell application "System Events"
 		set XMLdata to make new XML data with properties {text:XMLText}

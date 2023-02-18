@@ -392,6 +392,10 @@ end trim
 
 --c--   webFriendly(theText)
 --d--   Replace all the specials chars to be compatible with the web format.
+--d--   Make Names Web-Friendly v1.1
+--d--   by Mike Piontek ( http://mikepiontek.com )
+--d--   Converts the selected files to all lowercase, changes spaces to underscores, and converts other special characters to underscores. Also removes multiple underscores in a row.
+--d--   Works great as a Finder plugin... Just select a bunch of files, control-click, and choose Make Name Web-Friendly from the Automator menu!
 --a--   theText : text -- The text to convert for the web.
 --r--   text  -- The text converted.
 --x--   webFriendly("Ceci est du texte   . Test de nouveau.") --> "ceci_est_du_texte_._test_de_nouveau."

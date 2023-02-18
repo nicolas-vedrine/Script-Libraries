@@ -6,11 +6,9 @@
 --
 
 (*
--------------------------------- UI Utilities (formely iTunes Utilities) --------------------------------
+-------------------------------- UI Utilities --------------------------------
 
 The UI Utilities contains a bunch of functions to show dialog boxes and retreive the result of the interaction with the user.
-
---d-- Last modification date:                                                             25/01/2023
 
 --------------------------- LIST OF FUNCTIONS ---------------------------
 
@@ -189,80 +187,8 @@ on showReport(theText, theCount, theTotal, theApp)
 	showMessage(theMessage, theApp)
 end showReport
 
-
-(*
-	on getObjItems(theItems, theObjs)
-		set theList to {}
-		repeat with theItem in theItems
-			repeat with theObj in theObjs
-				if theItem as string is equal to theLabel of theObj as string then
-					set the end of theList to theObj
-				end if
-			end repeat
-		end repeat
-		return theList
-	end getObjItems
-*)
-
-(*
-	on createPromptList()
-		set theObj to {{theLabel:"No (remember)", theData:"no_remember"}, {theLabel:"No", theData:"no"}, {theLabel:"Yes", theData:"yes"}, {theLabel:"Yes (remember", theData:"yes"}}
-		set theChoicesPrompt to getUIItems(theObj)
-		tell script "List Utilities"
-			set theDefaultItem to getItemByData(theObj, "yes")
-		end tell
-		set thePromptText to "Choose your item :"
-		set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theLabel of theDefaultItem with multiple selections allowed
-	end createPromptList
-*)
-
-(*
-	on createDialog()
-		set theObj to {{theLabel:"No (remember)", theData:"no_remember"}, {theLabel:"No", theData:"no"}, {theLabel:"Yes", theData:"yes"}}
-		set thePromptText to "override"
-		tell script "List Utilities"
-			set theDefaultItem to getItemByData(theObj, "yes")
-			set theCancelButton to getItemByData(theObj, "no")
-			
-			--set theDialog to my getDialog(theObj, thePromptText, {theLabel of theDefaultItem}, null, false, "", 5)
-			
-			set theButtons to my getUIItems(theObj)
-			set theDialog to display dialog thePromptText buttons theButtons default button theLabel of theDefaultItem cancel button theLabel of theCancelButton
-			
-			if button returned of theDialog is theLabel of getItemByData(theObj, "no_remember") then
-				--display dialog button returned of theDialog
-			end if
-		end tell
-	end createDialog
-*)
-
 on run
-	(*
-		set theObjs to {{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"current"}, {theLabel:{fr_FR:"Playlist", en_EN:"Playlist", en_US:"Playlist"}, theData:"playlist"}, {theLabel:{fr_FR:"Sélectionnées", en_EN:"Selected", en_US:"Selected"}, theData:"selected"}}
-		set thePromptText to getLocaleItem(_promptSelectItemList_)
-		
-		tell script "List Utilities"
-			set theDefaultData to "playlist"
-			set theDefaultItem to getItemByData(theObjs, theDefaultData)
-			set theDefaultItemIndex to getItemIndexByData(theObjs, theDefaultData)
-		end tell
-		
-		tell script "UI Utilities"
-			set theDefaultItem to (theDefaultItemIndex as string) & " - " & getLocaleItem(theLabel of theDefaultItem)
-			set theChoicesPrompt to getUIItems(theObjs)
-		end tell
-		
-		set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theDefaultItem
-		if theChoice is not false then
-			set theSelectedIndex to word 1 of (theChoice as string)
-			set theSelectedData to theData of item theSelectedIndex of theObjs
-			return theSelectedData
-		end if
-	*)
-	
-	
 	return my testPromptFile()
-	
 end run
 
 to testGetLocaleItem()

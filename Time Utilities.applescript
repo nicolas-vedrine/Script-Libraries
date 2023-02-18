@@ -1,9 +1,31 @@
+--
+--	Created by: Nicolas VEDRINE
+--	Created on: in 2018
+--
+--	Copyright © 2018, All Rights Reserved
+--
+
+(*
+-------------------------------- Finder Utilities --------------------------------
+
+The Time Utilities contains a bunch of functions to format seconds in time.
+
+--------------------------- LIST OF FUNCTIONS ---------------------------
+
+--- secondsToHMS
+
+*)
+
 use AppleScript version "2.4" -- Yosemite (10.10) or later
+use framework "Foundation"
 use scripting additions
 
-
---> "01:01:59"
-to secondsToHMS(theSecs)
+--c--   secondsToHMS(theSecs)
+--d--   Convert seconds to hours, minutes and seconds.
+--a--   theSecs : integer -- The number of seconds.
+--r--   string -- The hours, minutes and seconds of the seconds.
+--x--   secondsToHMS(1341) --> "00:22:21"
+on secondsToHMS(theSecs)
 	set h to theSecs div 3600
 	set s to theSecs - h * 3600
 	set m to s div 60
@@ -22,5 +44,11 @@ to secondsToHMS(theSecs)
 end secondsToHMS
 
 on run
-	set fmtTime to secondsToHMS(1341)
+	my testSecondsToHMS()
 end run
+
+-- test
+
+to testSecondsToHMS()
+	return secondsToHMS(1341)
+end testSecondsToHMS
