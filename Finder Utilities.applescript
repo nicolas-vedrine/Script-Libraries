@@ -8,9 +8,7 @@
 (*
 -------------------------------- Finder Utilities --------------------------------
 
-The Finder Utilities contains a bunch of functions to search, retreive and manipulate tracks, playlists in the Music Library
-
---d-- Last modification date:                                                             25/01/2023
+The Finder Utilities contains a bunch of functions to search, retreive and manipulate files and folders.
 
 --------------------------- LIST OF FUNCTIONS ---------------------------
 

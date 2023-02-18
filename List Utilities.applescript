@@ -10,8 +10,6 @@
 
 The List Utilities contains a bunch of functions to search, retreive and manipulate items in list.
 
---d-- Last modification date:                                                             25/01/2023
-
 --------------------------- LIST OF FUNCTIONS ---------------------------
 
 
@@ -110,6 +108,8 @@ end flattenList
 on run
 	return my testFlattenList()
 end run
+
+-- test
 
 to testFlattenList()
 	set theList to {{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37057}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37057}, {name:"Acheté sur NailleucoPhone", theID:"E91BEB5B6EF9BCC2", isFolder:false, theClass:«class cUsP», isSmart:false, theCount:1}, {name:"=ALL MUSIC=", theID:"95D86D03EC2861F0", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"Smart", theID:"260C92610890EF91", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:181}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:843}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:778}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:35}}}}}}
