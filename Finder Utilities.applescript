@@ -133,7 +133,7 @@ on convertBytesToString(theSize, hasIncludedBytes)
 	log "convertBytesToString : nsUnits = " & nsUnits
 	
 	set theNSByteCountFormatter to current application's NSByteCountFormatter's new()
-	theNSByteCountFormatter's setIncludesActualByteCount:hasIncludedBytes
+	--theNSByteCountFormatter's setIncludesActualByteCount:hasIncludedBytes
 	theNSByteCountFormatter's setAllowedUnits:nsUnits
 	return (theNSByteCountFormatter's stringFromByteCount:theSize) as text
 	
@@ -411,7 +411,7 @@ on loadScriptFromMe(theScriptName)
 end loadScriptFromMe
 
 on run
-	return my testCheckIfDestinationHasEnoughSpace()
+	return my testConvertByteSize()
 end run
 
 to testFindFiles()
@@ -470,7 +470,6 @@ to testCheckIfDestinationHasEnoughSpace()
 	set uiUtils to my loadScriptFromMe("UI Utilities.scpt")
 	tell uiUtils
 		set theAliasses to promptFile("Please select some images :", {_image_ of uiUtils}, true)
-		--display dialog theAliasses
 	end tell
 	set theDestination to choose folder
 	--display dialog theDestination

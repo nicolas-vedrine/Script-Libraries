@@ -83,6 +83,7 @@ The Music Utilities contains a bunch of functions to search, retreive and manipu
 *)
 
 use AppleScript version "2.4" -- Yosemite (10.10) or later
+use framework "Foundation"
 use scripting additions
 
 property _albumNamePropertiesList_ : {{locale:"fr_FR", label:"album inconnu"}, {locale:"en_EN", label:"unknown album"}, {locale:"en_US", label:"unknown album"}, ""}
@@ -223,6 +224,7 @@ to getDialogTracksKind(isDBIDTracks)
 			return theTracks
 		end if
 	end tell
+	return null
 end getDialogTracksKind
 
 
@@ -307,8 +309,10 @@ on getChoosenPlaylistFromTree()
 	try
 		set thePlaylists to my getAllPlaylists()
 		set theCount to count of thePlaylists
+		--set theCount to 10
 		
 		set thePlaylistsTree to my getPlaylistsTree(thePlaylists, theCount)
+		--display dialog thePlaylistsTree
 		
 		tell script "List Utilities"
 			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
@@ -2052,10 +2056,10 @@ to setTrackLyrics(theArtist, theName, isFirstAttempt) -- TODO --> to check
 				end tell
 				
 				tell script "UI Utilities"
-					set theButtons to getUIItems(theObj)
+					set theButtons to getUIItems(theObj, false)
 				end tell
 				
-				set theDialog to display dialog thePromptText buttons theButtons default button theLabel of theDefaultItem
+				set theDialog to display dialog thePromptText buttons theButtons --default button theLabel of theDefaultItem
 				set theButtonReturned to button returned of theDialog
 				
 				if theButtonReturned is theLabel of theNoRemember then
@@ -2071,7 +2075,7 @@ to setTrackLyrics(theArtist, theName, isFirstAttempt) -- TODO --> to check
 					end tell
 					
 					tell script "UI Utilities"
-						set theButtons to getUIItems(theObj)
+						set theButtons to getUIItems(theObj, false)
 					end tell
 					
 					set theArtistDialog to display dialog thePromptText buttons theButtons default button theLabel of theDefaultItem default answer theArtist
@@ -2097,7 +2101,7 @@ to setTrackLyrics(theArtist, theName, isFirstAttempt) -- TODO --> to check
 				end tell
 				
 				tell script "UI Utilities"
-					set theButtons to getUIItems(theObj)
+					set theButtons to getUIItems(theObj, false)
 				end tell
 				set theDialog to display dialog thePromptText buttons theButtons default button theLabel of theDefaultItem default answer ""
 				if button returned of theDialog is theLabel of theDefaultItem and text returned of theDialog is not equal to "" then
@@ -2229,7 +2233,7 @@ on exportSelectedTracksToSpecificFolder(theTracks, theDestination) -- TODO --> f
 											set theDefaultItem to getItemByData(theChoicesPromptObj, "recent")
 										end tell
 										tell script "UI Utilities"
-											set theChoicesPrompt to getUIItems(theChoicesPromptObj)
+											set theChoicesPrompt to getUIItems(theChoicesPromptObj, true)
 										end tell
 										tell application "Music"
 											set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theLabel of theDefaultItem
@@ -2378,22 +2382,21 @@ end showMessageProcess
 --a--   theTotal : integer -- the total of the process.
 --x--   showReport("files processed.", theCount, theTotal)
 on showReport(theText, theCount, theTotal)
-	(*
-		tell script "Math Utilities"
-			set thePercent to getPercent(theCount, theTotal)
-		end tell
-		tell script "Number Lib"
-			set thePercent to roundToNearest(thePercent)
-		end tell
-		set strItem to "item"
-		if (theCount > 1) then
-			set strItem to strItem & "s"
-		end if
-		set theMessage to (theCount & " " & " / " & theTotal & " " & strItem & " (" & thePercent & "%) " & theText) as string
-		showMessage(theMessage)
-	*)
+	
+	tell script "Math Utilities"
+		set thePercent to getPercent(theCount, theTotal)
+	end tell
+	tell script "Number Lib"
+		set thePercent to roundToNearest(thePercent)
+	end tell
+	set strItem to "item"
+	if (theCount > 1) then
+		set strItem to strItem & "s"
+	end if
+	set theMessage to (theCount & " " & " / " & theTotal & " " & strItem & " (" & thePercent & "%) " & theText) as string
+	
 	tell script "UI Utilities"
-		showMessage(theText, theCount, theTotal, "Music")
+		showMessage(theMessage, "Music")
 	end tell
 end showReport
 
@@ -2473,13 +2476,17 @@ to testGetListReport()
 end testGetListReport
 
 on run
-	set thePlaylist to item 1 of my getPlaylistByName("Music Box")
+	
+	set theMusicBoxFolder to item 1 of my getFolderPlaylistByName("Juke Box")
+	set thePlaylist to my getLastFolderPlaylist(theMusicBoxFolder)
 	tell application "Music"
 		set theSize to size of thePlaylist
 		tell script "Finder Utilities"
-			return convertBytesToString(theSize, "MB", true)
+			return convertBytesToString(theSize, true)
 		end tell
 	end tell
+	
+	--my testSetTrackLyricsWithAPIHerokuApp()
 end run
 
 ------- UNIT TESTS -------
@@ -2511,6 +2518,18 @@ to testSetTrackLyrics()
 	end tell
 	return my setTrackLyrics(theArtist, theName, true)
 end testSetTrackLyrics
+
+to testSetTrackLyricsWithAPIHerokuApp()
+	set theTracks to getDialogTracksKind(false)
+	if theTracks is not null then
+		display dialog "Set tracks lyrics for " & (length of theTracks) & " tracks ?" buttons {"Cancel", "OK"} ¬
+			default button "OK" cancel button "Cancel"
+		if the button returned of the result is "OK" then
+			set theList to my setTracksLyricsWithAPIHerokuApp(theTracks)
+			my showReport("lyrics found.", count of theList, count of theTracks)
+		end if
+	end if
+end testSetTrackLyricsWithAPIHerokuApp
 
 to testFindAlbumArtworkWithGoogle()
 	set theTrack to my getCurrentTrack(true)
@@ -2704,7 +2723,7 @@ to testExportSelectedTracksToSpecificFolder()
 end testExportSelectedTracksToSpecificFolder
 
 to testGetChoosenPlaylistFromTree()
-	my getChoosenPlaylistFromTree()
+	return my getChoosenPlaylistFromTree()
 end testGetChoosenPlaylistFromTree
 
 to testFixDeadTracks()
@@ -2735,7 +2754,7 @@ to testRemoveCharacters()
 				set theDefaultItem to getItemByData(theChoicesPromptObj, my _strTrackName_)
 			end tell
 			tell script "UI Utilities"
-				set theChoicesPrompt to getUIItems(theChoicesPromptObj)
+				set theChoicesPrompt to getUIItems(theChoicesPromptObj, true)
 			end tell
 			set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theLabel of theDefaultItem
 			if (theChoice is not false) then

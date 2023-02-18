@@ -1,3 +1,41 @@
+--
+--	Created by: Nicolas VEDRINE
+--	Created on: in 2018.
+--
+--	Copyright © 2018, All Rights Reserved
+--
+
+(*
+-------------------------------- Media Utilities --------------------------------
+
+The Media Utilities contains a bunch of functions to get media infos and encode media files.
+
+--d-- Last modification date:                                                             25/01/2023
+
+--------------------------- LIST OF FUNCTIONS ---------------------------
+
+
+--- caseOf
+--- changeCase
+--- convertChar
+--- formatSpace
+--- getLongestPart
+--- getStrList
+--- joinWords
+--- removeChars
+--- removeLastSpace
+--- replaceChars
+--- split
+--- trim
+--- webFriendly
+
+
+*)
+
+use AppleScript version "2.4" -- Yosemite (10.10) or later
+use framework "Foundation"
+use scripting additions
+
 property _strLower_ : "lower"
 property _strUpper_ : "upper"
 property _strCapitalize_ : "capitalize"
@@ -5,9 +43,11 @@ property _strSentence_ : "sentence"
 property _strMixed_ : "mixed"
 property _strCamelCase_ : "camelCase"
 property _strNone_ : "none"
+
 property _strBack_ : "Back"
 property _strFront_ : "Front"
 
+-- TO DEPRECATE BEGIN --
 to getStrLower()
 	set str to _strLower_
 	return str
@@ -38,21 +78,55 @@ to getStrNone()
 	return str
 end getStrNone
 
-to changeCase of someText to caseType
-	(*
-    changes the case or capitalization of someText to the specified caseType using Python
-        parameters -    someText [text]: the text to change
-                        caseType [text]: the type of case desired:
-                            "upper" = all uppercase text
-                            "lower" = all lowercase text
-                            "title" = uppercase character at start of each word, otherwise lowercase
-                            "capitalize" = capitalize the first character of the text, otherwise lowercase
-        returns [text]:the changed text 
-    *)
+-- TO DEPRECATE END --
+
+--c--   caseOf(txt)
+--d--   Return the case of the text (upper, lower, mixed).
+--a--   txt : text -- The text.
+--r--   string  -- The kind of the case.
+--x--   caseOf("TEST DE TEXTE.") --> "upper"
+on caseOf(txt)
+	set strLib to my loadScriptFromMe(my _stringLib_)
+	tell strLib
+		set special_bigChars to getUCChars()
+		set special_smallChars to getLCChars()
+	end tell
+	
+	set upperIDs to id of ("ABCDEFGHIJKLMNOPQRSTUVWXY" & special_bigChars)
+	set lowerIDs to id of ("abcdefghijklmnopqrstuvwxyz" & special_smallChars)
+	
+	set uc to false
+	set lc to false
+	
+	repeat with thisID in (id of txt) as list
+		if (thisID is in upperIDs) then
+			set uc to true
+		else if (thisID is in lowerIDs) then
+			set lc to true
+		end if
+		if ((lc) and (uc)) then return my _strMixed_
+	end repeat
+	
+	if (uc) then
+		return my _strUpper_
+	else if (lc) then
+		return my _strLower_
+	else
+		return my _strNone_
+	end if
+end caseOf
+
+--c--   changeCase of someText to caseType
+--d--   Change the case of a text.
+--a--   someText : text -- The text to change its case.
+--a--   caseType : string -- the type of the case (upper, lower, mixed, capitalize). See properties.
+--r--   text  -- The text with ist case changed.
+--x--   changeCase of "Ceci est du texte. n'est-ce pas ?" to my _strSentence_ --> "Ceci est du texte. N'est-ce pas ?"
+on changeCase of someText to caseType
 	
 	set someText to someText as text
 	
-	set strLib to (load script file "Macintosh HD:Library:Script Libraries:String Lib.scpt")
+	set strLib to my loadScriptFromMe(my _stringLib_)
 	
 	tell strLib
 		--log (caseType)
@@ -81,39 +155,60 @@ to changeCase of someText to caseType
 	end tell
 end changeCase
 
-to split(theString, theDelimiter)
-	-- save delimiters to restore old settings
-	set oldDelimiters to AppleScript's text item delimiters
-	-- set delimiters to delimiter to be used
-	set AppleScript's text item delimiters to theDelimiter
-	-- create the array
-	set theArray to every text item of theString
-	-- restore the old setting
-	set AppleScript's text item delimiters to oldDelimiters
-	-- return the result
-	return theArray
-end split
-
-to joinWords(theWordsList, theStart, theEnd)
-	if theStart is missing value then
-		set theStart to 0
-	end if
-	if theEnd is missing value then
-		set theEnd to count of theWordsList
-	end if
-	set theStr to ""
-	set i to 0
-	repeat with theWord in theWordsList
-		set theStr to theStr & theWord
-		if i < (count of theWordsList) then
-			set theStr to theStr & " "
+--c--   convertChar(theChar)
+--d--   Convert a special char to a standard char.
+--a--   theChar : string -- The char to convert.
+--r--   string  -- the char converted.
+--x--   convertChar("<") --> "_"
+on convertChar(theChar)
+	set convertFrom to "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÂÁÀËÊÉÈÏÎÍÌÖÔÓÒÜÛÚÙÅØÑÇäâáàëêéèïîíìöôóòüûúùåøñçß∂ƒµ ,~!@#$%^*+=|<>?¿¡™€£¢∞§¶•ªº≠…¥“”˝‘©∆¬Ω≈√∫≤≥÷∑®†π‡±‰∏‹›«»⁄◊„ı˙ˇ¸˛¯˘/[]{}():;—" & quote
+	set convertTo to "abcdefghijklmnopqrstuvwxyzaaaaeeeeiiiioooouuuuaoncaaaaeeeeiiiioooouuuuaonc________________________________________________________________________----------_"
+	set multipleFrom to "&œŒæÆﬁﬂ"
+	set multipleTo to {"and", "oe", "OE", "ae", "AE", "fi", "fl"}
+	set deleteChars to "'´ˆ¨˚`˜’"
+	
+	set x to the offset of theChar in convertFrom
+	if x is not 0 then
+		set theChar to character x of convertTo
+	else
+		set x to the offset of theChar in multipleFrom
+		if x is not 0 then
+			set theChar to item x of multipleTo
+		else
+			set x to the offset of theChar in deleteChars
+			if x is not 0 then
+				set theChar to ""
+			else
+				set theChar to (theChar as string)
+			end if
 		end if
-		set i to i + 1
-	end repeat
-	return theStr
-end joinWords
+	end if
+	
+	return theChar
+end convertChar
 
-to getLongestPart(theString, theDelimiter)
+--c--   formatSpace(theStr)
+--d--   A composition with removeExtraSpaces and normaliseWhiteSpace from the String Lib.
+--a--   theStr : text -- The string to format.
+--r--   text  -- The formatted text.
+--x--   formatSpace("Ceci     est du texte .        ") --> "Ceci est du texte . "
+to formatSpace(theStr)
+	set strLib to loadScriptFromMe(my _stringLib_)
+	
+	tell strLib
+		set thePropertyStr to removeExtraSpaces(normaliseWhiteSpace(theStr))
+	end tell
+	
+	return thePropertyStr
+end formatSpace
+
+--c--   getLongestPart(theString, theDelimiter)
+--d--   Return the longest part of a string with a delimiter.
+--a--   theString : text -- The text to get its longest part.
+--a--   theDelimiter : string -- The string to delimit the text.
+--r--   string  -- The longest part of the string.
+--x--   getLongestPart("l'a'ziza'sddfgggttyyyyy", "'") --> "sddfgggttyyyyy"
+on getLongestPart(theString, theDelimiter)
 	if (theString contains theDelimiter) then
 		tell script "String Lib"
 			set theWordsList to explode(" ", theString)
@@ -165,21 +260,13 @@ to getLongestPart(theString, theDelimiter)
 	return theString
 end getLongestPart
 
-to removeChars(theStr, thePlace, theNumber)
-	if theNumber ≥ (count of theStr) then
-		return ""
-	else
-		if thePlace = my _strBack_ then
-			set theNumber to -theNumber - 1
-			set theNewStr to text 1 thru theNumber of theStr
-		else if thePlace = my _strFront_ then
-			set theNewStr to text (theNumber + 1) thru -1 of theStr
-		end if
-		return theNewStr
-	end if
-end removeChars
-
-to getStrList(theStr, theDelimiter)
+--c--   getStrList(theStr, theDelimiter)
+--d--   Return the longest part of a string with a delimiter.
+--a--   theString : text -- The text to get its longest part.
+--a--   theDelimiter : string -- The string to delimit the text.
+--r--   string  -- The longest part of the string.
+--x--   getLongestPart("l'a'ziza'sddfgggttyyyyy", "'") --> "sddfgggttyyyyy"
+on getStrList(theStr, theDelimiter) -- TODO
 	set theList to my split(theStr, ",")
 	set theMediaInfosList to {}
 	
@@ -204,11 +291,51 @@ to getStrList(theStr, theDelimiter)
 	
 end getStrList
 
-on trim(theText)
-	return do shell script "echo " & quoted form of theText & " | sed -e 's/^[ ]*//' | sed -e 's/[ ]*$//'"
-end trim
+--c--   joinWords(theWordsList, theStart, theEnd)
+--d--   Join words of a list.
+--a--   theWordsList : list -- The list of words.
+--r--   text  -- The list of words as text with space char between each words.
+--x--   joinWords({Ceci, est, du, texte.}) --> "Ceci est du texte."
+on joinWords(theWordsList)
+	set theStr to ""
+	set i to 0
+	repeat with theWord in theWordsList
+		set theStr to theStr & theWord
+		if i < ((count of theWordsList) - 1) then
+			set theStr to theStr & " "
+		end if
+		set i to i + 1
+	end repeat
+	return theStr
+end joinWords
 
-to removeLastSpace(theStr)
+--c--   removeChars(theStr, thePlace, theNumber)
+--d--   Remove N chars from a string at its back or front (see _strBack_ and _strFront_ properties).
+--a--   theStr : text -- The text to remove chars.
+--a--   thePlace : string -- The place where remove N chars.
+--a--   theNumber : integer -- The number of chars to remove.
+--r--   text  -- The text without the chars removed.
+--x--   removeChars("Ceci est du texte.", my _strFront_, 3) --> "i est du texte."
+to removeChars(theStr, thePlace, theNumber)
+	if theNumber ≥ (count of theStr) then
+		return ""
+	else
+		if thePlace = my _strBack_ then
+			set theNumber to -theNumber - 1
+			set theNewStr to text 1 thru theNumber of theStr
+		else if thePlace = my _strFront_ then
+			set theNewStr to text (theNumber + 1) thru -1 of theStr
+		end if
+		return theNewStr
+	end if
+end removeChars
+
+--c--   removeLastSpace(theStr)
+--d--   Remove the last space char.
+--a--   theChar : text -- The char to convert.
+--r--   string  -- The text without its last space char.
+--x--   convertChar("<") --> "_"
+on removeLastSpace(theStr)
 	set lastChar to text -1 thru -1 of theStr
 	if lastChar is " " then
 		set theStr to text 1 thru -2 of theStr
@@ -216,52 +343,58 @@ to removeLastSpace(theStr)
 	return theStr
 end removeLastSpace
 
-to formatSpace(theStr)
-	set strLib to (load script file "Macintosh HD:Library:Script Libraries:String Lib.scpt")
-	
-	tell strLib
-		set thePropertyStr to removeExtraSpaces(normaliseWhiteSpace(theStr))
-	end tell
-	
-	return thePropertyStr
-end formatSpace
-
---property special_bigChars : {"Ã„", "Ã…", "Ã‡", "Ã‰", "Ã‘", "Ã–", "Ãœ", "Ã€", "Ãƒ", "Ã•", "Å¸", "Ã‚", "ÃŠ", "Ã", "Ã‹", "Ãˆ", "Ã", "ÃŽ", "Ã", "ÃŒ", "Ã“", "Ã”", "Ã’", "Ãš", "Ã›", "Ã™"} as text
---property special_smallChars : {"Ã¤", "Ã¥", "Ã§", "Ã©", "Ã±", "Ã¶", "Ã¼", "Ã ", "Ã£", "Ãµ", "Ã¿", "Ã¢", "Ãª", "Ã¡", "Ã«", "Ã¨", "Ã­", "Ã®", "Ã¯", "Ã¬", "Ã³", "Ã´", "Ã²", "Ãº", "Ã»", "Ã¹"} as text
-
-(*property special_bigChars : {"Á", "Â", "Ã", "Ä", "Å", "Æ", "Ç", "È", "É", "Ê", "Ë", "Ì", "Í", "Î", "Ï", "Ð", "Ñ", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Œ", "Š", "þ", "Ù", "Ú", "Û", "Ü", "Ý", "Ÿ"} as textproperty special_smallChars : {"á", "â", "ã", "ä", "å", "æ", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï", "Ð", "ñ", "ò", "ó", "ô", "õ", "ö", "ø", "Œ", "š", "þ", "ù", "ú", "û", "ü", "ý", "Ÿ"} as text*)
-
-to caseOf(txt)
-	set strLib to (load script file "Macintosh HD:Library:Script Libraries:String Lib.scpt")
-	tell strLib
-		set special_bigChars to getUCChars()
-		set special_smallChars to getLCChars()
-	end tell
-	
-	set upperIDs to id of ("ABCDEFGHIJKLMNOPQRSTUVWXY" & special_bigChars)
-	set lowerIDs to id of ("abcdefghijklmnopqrstuvwxyz" & special_smallChars)
-	
-	set uc to false
-	set lc to false
-	
-	repeat with thisID in (id of txt) as list
-		if (thisID is in upperIDs) then
-			set uc to true
-		else if (thisID is in lowerIDs) then
-			set lc to true
+--c--   replaceChars(theStr, theChars, theNewChar)
+--d--   Replace chars found in the text by another.
+--a--   theStr : text -- The text where the char has to be replace.
+--a--   theChars : list -- A list of chars to replace.
+--a--   theNewChar : string -- The new char.
+--r--   string  -- The text without its last space char.
+--x--   replaceChars("Ceci est du texte.", {"e", "t", "x"}, "i") --> "Cici isi du iiiii."
+on replaceChars(theStr, theChars, theNewChar)
+	repeat with theChar in theChars
+		if theStr contains theChar then
+			tell script "String Lib"
+				set theStr to replaceString(theStr, theChar, theNewChar)
+			end tell
 		end if
-		if ((lc) and (uc)) then return my _strMixed_
 	end repeat
-	
-	if (uc) then
-		return my _strUpper_
-	else if (lc) then
-		return my _strLower_
-	else
-		return my _strNone_
-	end if
-end caseOf
+	log "String Utilities : replaceChars : theStr = " & theStr
+	return theStr
+end replaceChars
 
+--c--   split(theString, theDelimiter)
+--d--   Split a text with a delimiter.
+--a--   theStr : text -- The text to split.
+--a--   theDelimiter : string -- The delimiter.
+--r--   list  -- A list of char.
+--x--   split("Ceci est du texte.", "") --> {"C", "e", "c", "i", " ", "e", "s", "t", " ", "d", "u", " ", "t", "e", "x", "t", "e", "."}
+on split(theStr, theDelimiter)
+	-- save delimiters to restore old settings
+	set oldDelimiters to AppleScript's text item delimiters
+	-- set delimiters to delimiter to be used
+	set AppleScript's text item delimiters to theDelimiter
+	-- create the array
+	set theArray to every text item of theStr
+	-- restore the old setting
+	set AppleScript's text item delimiters to oldDelimiters
+	-- return the result
+	return theArray
+end split
+
+--c--   trim(theText)
+--d--   Trim the text to remove all the space chars.
+--a--   theText : text -- The text to trim.
+--r--   text  -- The text trimed.
+--x--   split("Ceci est du texte.", "") --> {"C", "e", "c", "i", " ", "e", "s", "t", " ", "d", "u", " ", "t", "e", "x", "t", "e", "."}
+on trim(theText)
+	return do shell script "echo " & quoted form of theText & " | sed -e 's/^[ ]*//' | sed -e 's/[ ]*$//'"
+end trim
+
+--c--   webFriendly(theText)
+--d--   Replace all the specials chars to be compatible with the web format.
+--a--   theText : text -- The text to convert for the web.
+--r--   text  -- The text converted.
+--x--   webFriendly("Ceci est du texte   . Test de nouveau.") --> "ceci_est_du_texte_._test_de_nouveau."
 on webFriendly(theText)
 	set Newtext to ""
 	set nextChar to ""
@@ -282,59 +415,6 @@ on webFriendly(theText)
 	if not (nextChar is "_" or nextChar is "-") then set Newtext to Newtext & nextChar
 	return Newtext
 end webFriendly
-
-to replaceChars(theStr, theChars, theNewChar)
-	tell script "String Lib"
-		repeat with theChar in theChars
-			if theStr contains theChar then
-				set theStr to replaceString(theStr, theChar, theNewChar)
-			end if
-		end repeat
-	end tell
-	log "String Utilities : replaceChars : theStr = " & theStr
-	return theStr
-end replaceChars
-
-on convertChar(theChar)
-	set convertFrom to "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÂÁÀËÊÉÈÏÎÍÌÖÔÓÒÜÛÚÙÅØÑÇäâáàëêéèïîíìöôóòüûúùåøñçß∂ƒµ ,~!@#$%^*+=|<>?¿¡™€£¢∞§¶•ªº≠…¥“”˝‘©∆¬Ω≈√∫≤≥÷∑®†π‡±‰∏‹›«»⁄◊„ı˙ˇ¸˛¯˘/[]{}():;—" & quote
-	set convertTo to "abcdefghijklmnopqrstuvwxyzaaaaeeeeiiiioooouuuuaoncaaaaeeeeiiiioooouuuuaonc________________________________________________________________________----------_"
-	set multipleFrom to "&œŒæÆﬁﬂ"
-	set multipleTo to {"and", "oe", "OE", "ae", "AE", "fi", "fl"}
-	set deleteChars to "'´ˆ¨˚`˜’"
-	
-	set x to the offset of theChar in convertFrom
-	if x is not 0 then
-		set theChar to character x of convertTo
-	else
-		set x to the offset of theChar in multipleFrom
-		if x is not 0 then
-			set theChar to item x of multipleTo
-		else
-			set x to the offset of theChar in deleteChars
-			if x is not 0 then
-				set theChar to ""
-			else
-				set theChar to (theChar as string)
-			end if
-		end if
-	end if
-	
-	return theChar
-end convertChar
-
-to testReplaceChars()
-	set theStr to "3\"38"
-	set theChars to {"\""}
-	set theNewStr to my replaceChars(theStr, theChars, "_")
-	return theNewStr
-end testReplaceChars
-
-to testLongestPart()
-	set theStr to "l'a'ziza'sddfgggttyyyyy"
-	set theDel to "'"
-	set theLongestPart to my getLongestPart(theStr, theDel)
-	return theLongestPart
-end testLongestPart
 
 property _fileAndFolderLib_ : "File and Folder Lib.scpt"
 property _finderUtilities_ : "Finder Utilities.scpt"
@@ -362,12 +442,67 @@ on loadScriptFromMe(theScriptName)
 end loadScriptFromMe
 
 on run
-	--return my trim("    C'o-Pilot    ")
-	(*
-		tell application "Finder"
-			set theScript to my loadScriptFromMe(my _listLib_)
-			return (myName of theScript)
-		end tell
-	*)
-	my testLongestPart()
+	my testWebFriendly()
 end run
+
+-- test
+
+to testWebFriendly()
+	return my webFriendly("Ceci est du texte   . Test de nouveau.")
+end testWebFriendly
+
+to testTrim()
+	return my trim("Ceci est du texte.           ")
+end testTrim
+
+to testSplit()
+	return my split("Ceci est du texte.", "")
+end testSplit
+
+to testReplaceChars()
+	return my replaceChars("Ceci est du texte.", {"e", "t", "x"}, "i")
+end testReplaceChars
+
+to testRemoveChars()
+	return my removeChars("Ceci est du texte.", my _strFront_, 3)
+end testRemoveChars
+
+to testJoinWords()
+	set theStr to "Ceci est du texte."
+	set theSplit to my split(theStr, " ")
+	log theSplit
+	set theJoin to my joinWords(theSplit, 0, count of theSplit)
+	return theJoin
+end testJoinWords
+
+to testFormatSpace()
+	set theStr to "Ceci     est du texte .        "
+	return my formatSpace(theStr)
+end testFormatSpace
+
+to testRemoveLastSpace()
+	set theStr to "Ceci est du texte . "
+	return my removeLastSpace(theStr)
+end testRemoveLastSpace
+
+to testLongestPart()
+	set theStr to "l'a'ziza'sddfgggttyyyyy"
+	set theDel to "'"
+	set theLongestPart to my getLongestPart(theStr, theDel)
+	return theLongestPart
+end testLongestPart
+
+to testChangeCase()
+	set theUpper to my _strUpper_
+	return changeCase of "Ceci est du texte. n'est-ce pas ?" to my _strSentence_
+	--set theArtist to changeCase of theArtist to its _strLower_
+end testChangeCase
+
+to testCaseOf()
+	return my caseOf("TEST DE TEXTE.")
+end testCaseOf
+
+to testConvertChar()
+	set theChar to "<"
+	return my convertChar(theChar)
+end testConvertChar

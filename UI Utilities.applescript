@@ -39,7 +39,7 @@ use scripting additions
 --d--   Get the correct string from the locale code (fr_FR, en_EN, en_US, etc). If no locale match, the defaultLocale is used.
 --a--   theItem : record -- A record which contains all the locale code.
 --r--   string -- The string of the locale code.
---x--   getUIItems(getLocaleItem({en_EN:"Current", en_US:"Current", defaultLocale:"Le défault"})) --> "Le défault"
+--x--   getUIItems(getLocaleItem({en_EN:"Current", en_US:"Current", defaultLocale:"Le défault"})) --> "Le défault" -- TODO
 on getLocaleItem(theItem)
 	set objCDictionary to (current application's NSDictionary's dictionaryWithDictionary:theItem)
 	set allKeys to objCDictionary's allKeys()
@@ -70,7 +70,7 @@ on getPromptList(theObjs, thePromptsList, theDefaultData)
 	end tell
 	
 	set theDefaultItem to (theDefaultItemIndex as string) & " - " & my getLocaleItem(theLabel of theDefaultItem)
-	set theChoicesPrompt to my getUIItems(theObjs)
+	set theChoicesPrompt to my getUIItems(theObjs, true)
 	
 	set theChoice to choose from list theChoicesPrompt with prompt thePromptText default items theDefaultItem
 	if theChoice is not false then
@@ -88,11 +88,18 @@ end getPromptList
 --a--   theItems : list -- List of records {theLabel, theData}. Also, label could be a list of multiple locale strings {fr_FR:"Courante", en_EN:"Current", en_US:"Current"}.
 --r--   list -- List of labels with indexes
 --x--   getUIItems({{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"no_remember"}, {theLabel:"No", theData:"no"}, {theLabel:"Yes", theData:"yes"}} --> {"1 - Courante", "2 - No", "3 - Yes"}
-on getUIItems(theItems)
+on getUIItems(theItems, formatIndex)
+	if formatIndex is missing value then
+		set formatIndex to true
+	end if
 	set theList to {}
 	set i to 1
 	repeat with theItem in theItems
-		set theStr to i & " - "
+		if formatIndex then
+			set theStr to i & " - "
+		else
+			set theStr to ""
+		end if
 		set theLabel to theLabel of item i of theItems
 		if class of theLabel is record then
 			set theStr to theStr & my getLocaleItem(theLabel)
@@ -113,6 +120,7 @@ property _promptSelectItemList_ : {fr_FR:"Sélectionnez un élément :", en_EN:"
 property _image_ : "public.image"
 property _text_ : "public.text"
 property _document_ : "public.document"
+property _audio_ : "public.audio"
 
 --c--   promptFile(thePromptText, theFileType, isMultipleAllowed)
 --d--   Ask file of files to a user.
@@ -253,22 +261,22 @@ on run
 	*)
 	
 	
-	return my testGetPromptList()
+	return my testPromptFile()
 	
 end run
 
 to testGetLocaleItem()
-	set theItem to {en_EN:"Current", en_US:"Current", defaultLocale:"Le défault"}
-	return my getLocaleItem(theItem)
+	set theItems to {en_EN:"Current", en_US:"Current", defaultLocale:"Le défault"}
+	return my getLocaleItem(theItems)
 end testGetLocaleItem
 
 to testGetUIItems()
 	set theItems to {{theLabel:{fr_FR:"Courante", en_EN:"Current", en_US:"Current"}, theData:"no_remember"}, {theLabel:"No", theData:"no"}, {theLabel:"Yes", theData:"yes"}}
-	return my getUIItems(theItems)
+	return my getUIItems(theItems, false)
 end testGetUIItems
 
 to testPromptFile()
-	set theFiles to my promptFile("Please select some images :", {my _image_}, false)
+	set theFiles to my promptFile("Please select some audio files :", {my _audio_}, true)
 	log class of theFiles
 end testPromptFile
 
