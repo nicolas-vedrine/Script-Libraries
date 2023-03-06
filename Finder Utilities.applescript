@@ -367,6 +367,12 @@ on getSize(theAlias, theType)
 	end tell
 end getSize
 
+on getTree(theAlias)
+	tell application "Finder"
+		
+	end tell
+end getTree
+
 on isEmptyDirectory(thePath)
 	set theCommand to "ls " & thePath
 	log "isEmptyDirectory : theCommand = " & theCommand
@@ -427,8 +433,12 @@ end loadScriptFromMe
 
 on run
 	--return my testConvertByteSize()
-	my testFindFiles()
+	my testGetTree()
 end run
+
+to testGetTree()
+	return my getTree(choose folder)
+end testGetTree
 
 to testFindFiles()
 	set thePath to my convertAliasToPOSIXString(choose folder with prompt "Select the folder:")
