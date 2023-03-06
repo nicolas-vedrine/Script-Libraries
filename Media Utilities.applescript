@@ -66,24 +66,25 @@ on encodeAudioFiles(theFiles)
 end encodeAudioFiles
 
 to getMediaInfos(theFile)
-	
 	set theProgram to "/usr/local/bin/mediainfo "
-	
-	set theCommand to ""
-	
-	set XMLtext to do shell script "usr/local/bin/mediainfo " & theFile & " --Output=XML"
-	--& "().encode('utf8')\" "	
-	
+	set theOutput to " --Output=XML"
+	set theCommand to theProgram & theFile & theOutput
+	log "getMediaInfos : theCommand = " & theCommand
+	set XMLtext to do shell script theCommand
 	
 	tell script "XML Utilities"
 		set XMLdata to getXMLData(XMLtext)
 		set theBitrateMode to getXMLElement from {XMLdata, "media", "track", "OverallBitRate_Mode"}
 		set theBitrate to getXMLElement from {XMLdata, "media", "track", "OverallBitRate"}
 		set theFormatInfo to getXMLElement from {XMLdata, "media", "track", "Format"}
+		set theTrack to getXMLElement from {XMLdata, "media", "track", "Track"}
+		set theArtist to getXMLElement from {XMLdata, "media", "track", "Performer"}
+		set theAlbum to getXMLElement from {XMLdata, "media", "track", "Album"}
+		--set theTrackSort to getXMLElement from {XMLdata, "media", "track", "Track_Sort"}
 	end tell
 	
 	tell script "String Lib"
-		set theMediaInfos to {bitRateMode:lowerString(theBitrateMode), bitRate:theBitrate, formatInfo:theFormatInfo}
+		set theMediaInfos to {bitRateMode:lowerString(theBitrateMode), bitRate:theBitrate, formatInfo:theFormatInfo, track:theTrack, album:theAlbum, artist:theArtist}
 		return theMediaInfos
 	end tell
 	

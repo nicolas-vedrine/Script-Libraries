@@ -23,6 +23,7 @@ The Music Utilities contains a bunch of functions to search, retreive and manipu
 --- getDBIDTracks
 --- getDialogTracksKind
 --- getFolderPlaylistByName
+--- getGhostMediaFiles
 --- getLastFolderPlaylist
 --- getPlaylistByName
 --- getPlaylistTracks
@@ -85,6 +86,10 @@ The Music Utilities contains a bunch of functions to search, retreive and manipu
 use AppleScript version "2.4" -- Yosemite (10.10) or later
 use framework "Foundation"
 use scripting additions
+
+property _isDebug_ : true
+--property _searchString_ : "you're not my kind" -- TODO to test with that
+property _searchString_ : "at the"
 
 property _albumNamePropertiesList_ : {{locale:"fr_FR", label:"album inconnu"}, {locale:"en_EN", label:"unknown album"}, {locale:"en_US", label:"unknown album"}, ""}
 property _promptSelectItemList_ : {fr_FR:"Sélectionnez un élément :", en_EN:"Select an item :", en_US:"Select an item :"}
@@ -239,6 +244,48 @@ to getFolderPlaylistByName(theFolderPlaylistName)
 		return folderPlaylists
 	end tell
 end getFolderPlaylistByName
+
+to getGhostMediaFiles(theTracks, theFiles)
+	set i to 0
+	set j to 0
+	repeat with theTrack in theTracks
+		tell application "Music"
+			tell script "UI Utilities"
+				showProgress(i, count of theTracks, "Comparing..." & " (" & i & "/" & (count of theTracks) & ")", my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_))
+			end tell
+			if class of theTrack is not shared track then
+				set theTrack to contents of theTrack
+				set theLocation to location of theTrack
+				if theLocation is not missing value then
+					tell script "Finder Utilities"
+						set thePath to convertAliasToPOSIXString(theLocation)
+					end tell
+					
+					considering case
+						if thePath is in theFiles then
+							tell script "List Lib"
+								set theAll to findAll(theFiles, thePath)
+								if (count of theAll) > 1 then
+									tell script "UI Utilities"
+										--showListRreport(theAll)
+									end tell
+								else
+									set theFiles to deleteItem(theFiles, item 1 of theAll)
+									set j to j + 1
+									log "getGhostMediaFiles : thePath = " & thePath
+									log "getGhostMediaFiles : count of theFiles = " & (count of theFiles)
+								end if
+							end tell
+						end if
+					end considering
+				end if
+			end if
+		end tell
+		set i to i + 1
+		log "getGhostMediaFiles : ---------"
+	end repeat
+	return theFiles
+end getGhostMediaFiles
 
 --c--   getLastFolderPlaylist(theFolderPlaylist)
 --d--   Get the last user playlist of a folder playlist.
@@ -2477,19 +2524,250 @@ end testGetListReport
 
 on run
 	
-	set theMusicBoxFolder to item 1 of my getFolderPlaylistByName("Juke Box")
-	set thePlaylist to my getLastFolderPlaylist(theMusicBoxFolder)
-	tell application "Music"
-		set theSize to size of thePlaylist
-		tell script "Finder Utilities"
-			return convertBytesToString(theSize, true)
+	(*
+		set theMusicBoxFolder to item 1 of my getFolderPlaylistByName("Juke Box")
+		set thePlaylist to my getLastFolderPlaylist(theMusicBoxFolder)
+		tell application "Music"
+			set theSize to size of thePlaylist
+			tell script "Finder Utilities"
+				return convertBytesToString(theSize, true)
+			end tell
 		end tell
-	end tell
+	*)
 	
 	--my testSetTrackLyricsWithAPIHerokuApp()
+	return my testGetGhostMediaFiles()
+	--return my testCheckGhostMediaFilesFromTextFile()
+	
 end run
 
 ------- UNIT TESTS -------
+
+to testTagGhostMediaFiles()
+	set theChoices to my testGetGhostMediaFiles()
+	if theChoices is not false then
+		set theErrors to {}
+		repeat with theChoice in theChoices
+			set thePath to theChoice as string
+			tell script "Finder Utilities"
+				try
+					set theAlias to convertPathToAlias(thePath)
+					tell script "File and Folder Lib"
+						setColorLabel(theAlias, 5)
+					end tell
+					copy theAlias to the end of theAliasses
+				on error errorMessage number errorNumber
+					copy thePath to the end of theErrors
+				end try
+			end tell
+		end repeat
+		return theErrors
+	end if
+end testTagGhostMediaFiles
+
+to testGetGhostMediaFiles()
+	set theFolder to choose folder with prompt "Select the Music folder:"
+	tell script "Finder Utilities"
+		set theConvertPath to convertAliasToPOSIXString(theFolder)
+		log "parseItem : theConvertPath = " & theConvertPath
+	end tell
+	
+	tell script "String Utilities"
+		set theConvertPathRemove to removeChars(theConvertPath, its _strBack_, 1)
+	end tell
+	
+	if my _isDebug_ then
+		set theKeyword to my _searchString_
+	else
+		set theKeyword to ""
+	end if
+	tell script "Finder Utilities"
+		set theFiles to findFiles(theConvertPathRemove, theKeyword, its _musicExtensions_, false)
+	end tell
+	
+	tell script "List Lib"
+		set theFiles to sortList(theFiles)
+	end tell
+	
+	tell script "UI Utilities"
+		--showListReport(theFiles)
+	end tell
+	
+	(*
+		set theList to {}
+		set i to 0
+		repeat with theFile in theFiles
+			tell script "UI Utilities"
+				showProgress(i, count of theFiles, "", "")
+			end tell
+			tell script "Finder Utilities"
+				set theAlias to convertPathToAlias(theFile)
+			end tell
+			set isPresent to false
+			
+			tell script "Media Utilities"
+				set theMediaInfos to getMediaInfos(quoted form of theFile)
+				set theTrackName to track of theMediaInfos
+			end tell
+			tell application "Music"
+				set theTracks to get (every track whose name is theTrackName)
+				repeat with theTrack in theTracks
+					set theLocation to (location of theTrack) as string
+					if theLocation is equal to (theAlias as string) then
+						set isPresent to true
+						exit repeat
+					end if
+					--log name of theTrack
+				end repeat
+			end tell
+			if isPresent is not true then
+				copy theFile to the end of theList
+			end if
+			set i to i + 1
+		end repeat
+		
+		tell script "List Lib"
+				set theList to sortList(theList)
+			end tell
+	*)
+	
+	
+	tell application "Music"
+		if my _isDebug_ then
+			set theTracks to (get every track whose name contains my _searchString_)
+		else
+			set theTracks to (get every track)
+		end if
+	end tell
+	
+	tell script "List Lib"
+		set theList to sortList(my getGhostMediaFiles(theTracks, theFiles))
+	end tell
+	
+	set theTotalSize to 0
+	repeat with theItem in theList
+		tell script "Finder Utilities"
+			set theAlias to convertPathToAlias(theItem)
+			set theSize to getSize(theAlias, "")
+			log theItem & "  " & theSize
+			set theTotalSize to theTotalSize + theSize
+		end tell
+	end repeat
+	
+	tell script "Finder Utilities"
+		set theConvertedSize to convertBytesToString(theTotalSize, true)
+	end tell
+	
+	if (count of theList) > 0 then
+		tell script "UI Utilities"
+			set theItems to {en_EN:"Select the files to delete :", en_US:"Select the files to delete :", defaultLocale:"Select the files to delete :", fr_FR:"Sélectionnez les fichiers à supprimer"}
+			set theText to getLocaleItem(theItems) & " " & ((count of theList) as string) & " Size : " & theConvertedSize
+		end tell
+		
+		
+		tell script "UI Utilities"
+			--set theReport to showListReport(theList)
+		end tell
+		
+		
+		set theChoices to choose from list theList with prompt theText with multiple selections allowed
+		
+		if theChoices is not false then
+			tell script "UI Utilities"
+				set theReport to showListReport(theChoices)
+			end tell
+		end if
+		
+		return theChoices
+	else
+		display dialog "Pas de fichier..."
+	end if
+end testGetGhostMediaFiles
+
+to testCheckGhostMediaFilesFromTextFile()
+	set theFile to choose file
+	
+	tell script "File and Folder Lib"
+		set theText to readUTF8(theFile)
+	end tell
+	
+	tell script "String Lib"
+		set theList to paragraphs of theText
+	end tell
+	
+	set thePresents to {}
+	
+	set i to 0
+	tell application "Music"
+		log "Getting tracks..."
+		if my _isDebug_ then
+			set theTracks to get every track whose name contains my _searchString_
+		else
+			set theTracks to get every track
+		end if
+		repeat with theTrack in theTracks
+			if class of theTrack is not shared track then
+				tell script "UI Utilities"
+					showProgress(i, count of theTracks, "", "")
+				end tell
+				
+				set theLocation to location of theTrack
+				if theLocation is not missing value then
+					tell script "Finder Utilities"
+						set theLocationPath to convertAliasToPOSIXString(theLocation) as string
+					end tell
+					
+					(*
+							log "theLocationPath = " & theLocationPath
+								
+							tell script "List Lib"
+								set theFirst to findFirst(theList, theLocationPath)
+								log "theFirst = " & theFirst
+							end tell
+						*)
+					considering case
+						if theLocationPath is in theList then
+							tell script "List Lib"
+								set theItem to item (findFirst(theList, theLocationPath)) of theList
+							end tell
+							
+							
+							
+							set isMatched to (theLocationPath = theItem)
+							log "testCheckGhostMediaFilesFromTextFile : isMatched = " & isMatched
+							
+							
+							--log "theItem = " & theItem					
+							
+							set theDebug to {theItem, theLocationPath}
+							tell script "UI Utilities"
+								--showListReport(theDebug)
+							end tell
+							
+							
+							if isMatched then
+								copy theItem to the end of thePresents
+								tell script "File and Folder Lib"
+									--setColorLabel(theLocation, "red")
+								end tell
+							end if
+							log "---------------"
+						end if
+					end considering
+				end if
+			end if
+			
+			set i to i + 1
+			
+		end repeat
+	end tell
+	
+	tell script "UI Utilities"
+		showListReport(thePresents)
+	end tell
+	
+	return thePresents
+end testCheckGhostMediaFilesFromTextFile
 
 to testCheckIfDestinationHasEnoughSpace()
 	set theTracks to my getDialogTracksKind(false)

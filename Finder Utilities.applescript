@@ -215,6 +215,11 @@ end createFolder
 --r--   list -- A list of files found.
 --x--   findFiles("/Volumes/VOYAGEUR/iTunes/Musique/Media.localized/", "iron", {"MP3", "AAC", "M4A", "AIFF", "WAV", "ALAC"}, false) --> {"/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/AKHENATON/Métèque Et Mat/12 lettre aux hirondelles.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/ALANIS MORISSETTE/Jagged Little Pill/10 ironic.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/ALANIS MORISSETTE/MTV Unplugged/ironic (unplugged).mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/BETRAYING THE MARTYRS/Rapture/1-04 the iron gates.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/BLACK SABBATH/Essentials/04 iron man.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/BOB MARLEY/Greatest Hits/1-01 iron lion zion.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/Compilations/Spawn The Album/06 for whom the bell tolls (the irony of it all).mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/DIRE STRAITS/On Every Street/08 iron hand.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/FOO FIGHTERS/Saint Cecilia - Ep/04 iron rooster.m4a", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/IRON MAIDEN/Iron Maiden/09 iron maiden.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/IRON MAIDEN/Live After Death/1-11 iron maiden.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/IRON MAIDEN/Live At Donington_/2-02 iron maiden.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/K'S CHOICE/Paradise In Me/07 iron flower.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/METALLICA/S&M2/2-03 intro to the iron foundry.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/METALLICA/S&M2/2-04 mosolov- the iron foundry, op. 19.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/MOTORHEAD/Motorhead/04 iron horse _ born to lose.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/MOTORHEAD/No Sleep 'Til Hammersmith/05 iron horse.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/MOTORHEAD/On Parole/04 iron horse (born to lose).mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/RADIOHEAD/The Bends/08 my iron lung.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/SIR MIX-A-LOT/Swass/09 iron man (featuring metal church).mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/Sugar Ray/Lemonade & Brownies/03 iron mic.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/SUGAR RAY/Lemonade & Brownies/03 iron mic.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/THE CARDIGANS/First Band On The Moon/09 iron man.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/TOM HOLKENBORG/Terminator Dark Fate (Music From The Motion Picture)/1-04 iron spike.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Music/Tom Morello_The Nightwatchman/The Fabled City/10 the iron wheel.mp3", "/Volumes/VOYAGEUR/iTunes/Musique/Media.localized//Tom Morello_The Nightwatchman/The Fabled City/10 the iron wheel.mp3"}
 to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
+	
+	if theKeyword is "" and (count of theTypes) is 0 then
+		return null -- TODO
+	end if
+	
 	set theCommand to "find"
 	set theArgs to "-type f" & " "
 	if (count of theTypes) > 0 then
@@ -224,16 +229,27 @@ to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
 	if isCaseSensitive then
 		set theName to "-name "
 	else
-		set theName to "-iname "
+		set theName to "-iname"
 	end if
 	if theKeyword is not "" then
-		set theArgs to theArgs & "-iname \"*" & theKeyword & "*\"" -- test
+		--set theArgs to theArgs & "-iname \"*" & theKeyword & "*\"" -- test
+	else
+		
+	end if
+	
+	if (count of theTypes) = 0 then
+		set theArgs to theArgs & theName & " \"*" & theKeyword & "*\""
 	else
 		repeat with theType in theTypes
-			if i = 1 then
-				set theArgs to theArgs & theName & " " & "\"*." & theType & "\""
+			if theKeyword is "" then
+				set theCode to theName & " " & "\"*" & "." & theType & "\""
 			else
-				set theArgs to theArgs & "-o" & " " & theName & "\"*." & theType & "\""
+				set theCode to theName & " " & "\"*" & theKeyword & "*." & theType & "\""
+			end if
+			if i = 1 then
+				set theArgs to theArgs & theCode
+			else
+				set theArgs to theArgs & "-o" & " " & theCode
 			end if
 			if i < (count of theTypes) then
 				set theArgs to theArgs & " "
@@ -245,9 +261,13 @@ to findFiles(thePath, theKeyword, theTypes, isCaseSensitive)
 	set theCommand to theCommand & " " & quoted form of thePath & " " & theArgs
 	log "findFiles = theCommand : " & theCommand
 	
+	--return null
+	
 	tell script "List Lib"
-		set theList to sortList(paragraphs of (do shell script theCommand))
+		--set theList to sortList(paragraphs of (do shell script theCommand))
 	end tell
+	
+	set theList to paragraphs of (do shell script theCommand)
 	
 	return theList
 end findFiles
@@ -347,17 +367,14 @@ on getSize(theAlias, theType)
 	end tell
 end getSize
 
-(*
-	on convertPathToPOSIXAlias(thePath)
-		tell application "Finder"
-			try
-				return POSIX file thePath as alias
-			on error
-				return path of thePath
-			end try
-		end tell
-	end convertPathToPOSIXAlias
-*)
+on isEmptyDirectory(thePath)
+	set theCommand to "ls " & thePath
+	log "isEmptyDirectory : theCommand = " & theCommand
+	set theResults to paragraphs of (do shell script theCommand)
+	set theCount to (count of theResults)
+	log "isEmptyDirectory : theCount = " & theCount
+	return theCount = 0
+end isEmptyDirectory
 
 --c--   isItemExists(thePath)
 --d--   Test if a file - folder exists.
@@ -409,14 +426,19 @@ on loadScriptFromMe(theScriptName)
 end loadScriptFromMe
 
 on run
-	return my testConvertByteSize()
+	--return my testConvertByteSize()
+	my testFindFiles()
 end run
 
 to testFindFiles()
-	set thePath to my convertAliasToPOSIXString(choose folder)
-	set theKeyword to "iron"
+	set thePath to my convertAliasToPOSIXString(choose folder with prompt "Select the folder:")
+	set theKeyword to ""
 	set theTypes to my _musicExtensions_
-	return my findFiles(thePath, theKeyword, theTypes, false)
+	set theFiles to my findFiles(thePath, theKeyword, theTypes, false)
+	if theFiles is not null then
+		log "count of theFiles = " & (count of theFiles)
+		return theFiles
+	end if
 end testFindFiles
 
 to testGetAliasDisk()
@@ -435,19 +457,18 @@ to testIsMostRecentFile()
 	return my isMostRecentFile(theAliasSource, theAliasDestination)
 end testIsMostRecentFile
 
+to testIsEmptyDirectory()
+	set theDir to choose folder
+	set theDirPath to my convertAliasToPOSIXString(theDir)
+	return my isEmptyDirectory(quoted form of theDirPath)
+end testIsEmptyDirectory
+
 to testIsItmExists()
 	set theAlias to choose file
 	set thePath to my convertAliasToPOSIXString(theAlias)
 	display dialog thePath
 	return isItemExists(thePath)
 end testIsItmExists
-
-(*
-	to testConvertPathToPOSIXAlias()
-		set thePath to choose file
-		return my convertPathToPOSIXAlias(thePath)
-	end testConvertPathToPOSIXAlias
-*)
 
 to testConvertAliasToString()
 	set theAlias to choose file

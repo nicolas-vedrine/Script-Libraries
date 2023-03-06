@@ -62,7 +62,7 @@ to getXMLElement from XMLItems
 			end try
 		end tell
 	on error errorMessage number errorNumber
-		log errorMessage
+		log "getXMLElement = errorMessage " & errorMessage
 		return missing value
 		-- error "getXMLElement handler:  element not found (" & errorNumber & ")"
 		
