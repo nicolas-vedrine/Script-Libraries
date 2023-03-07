@@ -359,6 +359,7 @@ end getParentPath
 --x--   getSize(alias "Macintosh HD:Users:developer:Desktop:Screenshot:Capture d’écran 2022-11-09 à 18.13.59.png", "") --> 387094
 on getSize(theAlias, theType)
 	tell application "Finder"
+		--display dialog theAlias as string
 		set theSize to size of (info for theAlias)
 		if (theType is equal to "mo") then
 			set theSize to my convertByteSize(theSize, 1024, 0)
@@ -369,9 +370,80 @@ end getSize
 
 on getTree(theAlias)
 	tell application "Finder"
-		
+		set theTreeItem to my getTreeItem(theAlias)
+		set theInfos to info for theAlias
+		set isVisible to (visible of theInfos)
+		if isVisible then
+			if isFolder of theTreeItem then
+				set theRootItemChildren to children of theTreeItem
+				set theItems to get items of theAlias
+				set theCount of theTreeItem to count of theItems
+				set i to 0
+				repeat with theItem in theItems
+					tell script "UI Utilities"
+						set theName to my getFileName(theItem as alias)
+						showProgress(i, count of theItems, name of theTreeItem, theName)
+					end tell
+					set theChildItem to my getTree(theItem as alias)
+					copy theChildItem to the end of theRootItemChildren
+					set i to i + 1
+				end repeat
+			end if
+		end if
 	end tell
+	return theTreeItem
 end getTree
+
+on getTreeItem(theAlias)
+	set theName to my getFileName(theAlias)
+	set theSize to my convertBytesToString(getSize(theAlias, ""), false)
+	set isFolder to my isFolder(theAlias)
+	if isFolder then
+		set theChildren to {}
+		set theItem to {name:theName, size:theSize, theAlias:theAlias, isFolder:isFolder, children:theChildren, theCount:0}
+	else
+		set theItem to {name:theName, size:theSize, theAlias:theAlias, isFolder:isFolder}
+	end if
+end getTreeItem
+
+on showUITree(theFlattenList, thePrompt)
+	--log "showUIPlaylistsList = " & item 3 of theFlattenList
+	set theChoiceList to my getChoiceList(theFlattenList)
+	tell application "Finder"
+		set theChoice to choose from list theChoiceList with prompt thePrompt
+	end tell
+	log "showUIPlaylistsList = theChoice : " & theChoice
+	return theChoice
+end showUITree
+
+to getChoiceList(theList)
+	set theChoiceList to {}
+	repeat with i from 1 to count of theList
+		set theItem to item i of theList
+		
+		if i = 3 then
+			--			log "getChoiceList = theItem : " & theItem as string
+		end if
+		set theLabel to theLabel of theItem
+		if isFolder of theItem then
+			set theLabel to i & " - " & theLabel & " (" & theCount of theItem & " files" & " - " & size of theItem & ")"
+		else
+			set theLabel to i & " - " & theLabel & " (" & size of theItem & ")"
+		end if
+		if i = 3 then
+			log "getChoiceList = theLabel : " & theLabel as string
+		end if
+		set the end of theChoiceList to theLabel as string
+	end repeat
+	return theChoiceList
+end getChoiceList
+
+to getChoosenItem(theChoice, theFlattenItems)
+	set selectedIndex to word 1 of (item 1 of theChoice as string)
+	set theItem to item selectedIndex of theFlattenItems
+	set theAlias to theAlias of theItem
+	return theAlias
+end getChoosenItem
 
 on isEmptyDirectory(thePath)
 	set theCommand to "ls " & thePath
@@ -381,6 +453,13 @@ on isEmptyDirectory(thePath)
 	log "isEmptyDirectory : theCount = " & theCount
 	return theCount = 0
 end isEmptyDirectory
+
+on isFolder(theAlias)
+	tell application "Finder"
+		set theInfo to info for theAlias
+	end tell
+	return folder of theInfo
+end isFolder
 
 --c--   isItemExists(thePath)
 --d--   Test if a file - folder exists.
@@ -437,7 +516,21 @@ on run
 end run
 
 to testGetTree()
-	return my getTree(choose folder)
+	set theTree to getTree(choose folder)
+	set theChildren to children of theTree
+	tell script "List Utilities"
+		set theFlattenPlaylists to flattenList(theChildren, null, 0)
+	end tell
+	set theChoice to my showUITree(theFlattenPlaylists, "Choose an item :")
+	
+	if theChoice is not false then
+		set theAlias to my getChoosenItem(theChoice, theFlattenPlaylists)
+		tell application "Finder"
+			activate
+			reveal theAlias
+		end tell
+	end if
+	
 end testGetTree
 
 to testFindFiles()
