@@ -126,6 +126,8 @@ on convertBytesToString(theSize, hasIncludedBytes)
 		set nsUnits to a reference to 4
 	else if theSize > 1.0E+9 then
 		set nsUnits to a reference to 8
+	else
+		set nsUnits to a reference to 8
 	end if
 	
 	log "convertBytesToString : nsUnits = " & nsUnits
@@ -368,31 +370,48 @@ on getSize(theAlias, theType)
 	end tell
 end getSize
 
-on getTree(theAlias)
-	tell application "Finder"
-		set theTreeItem to my getTreeItem(theAlias)
-		set theInfos to info for theAlias
-		set isVisible to (visible of theInfos)
-		if isVisible then
-			if isFolder of theTreeItem then
-				set theRootItemChildren to children of theTreeItem
-				set theItems to get items of theAlias
-				set theCount of theTreeItem to count of theItems
-				set i to 0
-				repeat with theItem in theItems
-					tell script "UI Utilities"
-						set theName to my getFileName(theItem as alias)
-						showProgress(i, count of theItems, name of theTreeItem, theName)
-					end tell
-					set theChildItem to my getTree(theItem as alias)
-					copy theChildItem to the end of theRootItemChildren
-					set i to i + 1
-				end repeat
+on getTree(theAlias, isRecursive, theLevel)
+	log "getTree : theLevel = " & theLevel
+	set theTreeItem to my getTreeItem(theAlias)
+	set theInfos to info for theAlias
+	set isVisible to (visible of theInfos)
+	if isVisible then
+		if isFolder of theTreeItem then
+			--set theRootItemChildren to children of theTreeItem
+			--set theItems to get items of theAlias
+			--set theCount of theTreeItem to count of theItems
+			--set i to 0
+			if isRecursive is false then
+				if theLevel < 1 then
+					my parseTreeItem(theTreeItem, isRecursive, theLevel)
+				end if
+			else
+				my parseTreeItem(theTreeItem, isRecursive, theLevel)
 			end if
 		end if
-	end tell
+	end if
 	return theTreeItem
 end getTree
+
+on parseTreeItem(theTreeItem, isRecursive, theLevel)
+	set theRootItemChildren to children of theTreeItem
+	set theAlias to alias of theTreeItem
+	tell application "Finder"
+		set theItems to get items of theAlias
+	end tell
+	set theCount of theTreeItem to count of theItems
+	set level of theTreeItem to theLevel
+	set i to 0
+	repeat with theItem in theItems
+		tell script "UI Utilities"
+			set theName to my getFileName(theItem as alias)
+			showProgress(i, count of theItems, name of theTreeItem, theName)
+		end tell
+		set theChildItem to my getTree(theItem as alias, isRecursive, theLevel + 1)
+		copy theChildItem to the end of theRootItemChildren
+		set i to i + 1
+	end repeat
+end parseTreeItem
 
 on getTreeItem(theAlias)
 	set theName to my getFileName(theAlias)
@@ -400,9 +419,9 @@ on getTreeItem(theAlias)
 	set isFolder to my isFolder(theAlias)
 	if isFolder then
 		set theChildren to {}
-		set theItem to {name:theName, size:theSize, theAlias:theAlias, isFolder:isFolder, children:theChildren, theCount:0}
+		set theItem to {name:theName, size:theSize, alias:theAlias, isFolder:isFolder, level:0, children:theChildren, theCount:0}
 	else
-		set theItem to {name:theName, size:theSize, theAlias:theAlias, isFolder:isFolder}
+		set theItem to {name:theName, size:theSize, alias:theAlias, isFolder:isFolder, level:0}
 	end if
 end getTreeItem
 
@@ -425,10 +444,13 @@ to getChoiceList(theList)
 			--			log "getChoiceList = theItem : " & theItem as string
 		end if
 		set theLabel to theLabel of theItem
+		tell script "String Utilities"
+			set theIndex to getZeroFormat(i, count of theList)
+		end tell
 		if isFolder of theItem then
-			set theLabel to i & " - " & theLabel & " (" & theCount of theItem & " files" & " - " & size of theItem & ")"
+			set theLabel to theIndex & " - " & theLabel & " /" & " (" & theCount of theItem & " files" & " - " & size of theItem & ")"
 		else
-			set theLabel to i & " - " & theLabel & " (" & size of theItem & ")"
+			set theLabel to theIndex & " - " & theLabel & " (" & size of theItem & ")"
 		end if
 		if i = 3 then
 			log "getChoiceList = theLabel : " & theLabel as string
@@ -439,7 +461,9 @@ to getChoiceList(theList)
 end getChoiceList
 
 to getChoosenItem(theChoice, theFlattenItems)
-	set selectedIndex to word 1 of (item 1 of theChoice as string)
+	tell script "String Utilities"
+		set selectedIndex to removeZeroFormat(word 1 of (item 1 of theChoice as string))
+	end tell
 	set theItem to item selectedIndex of theFlattenItems
 	set theAlias to theAlias of theItem
 	return theAlias
@@ -516,7 +540,7 @@ on run
 end run
 
 to testGetTree()
-	set theTree to getTree(choose folder)
+	set theTree to getTree(choose folder, true, 0)
 	set theChildren to children of theTree
 	tell script "List Utilities"
 		set theFlattenPlaylists to flattenList(theChildren, null, 0)
@@ -527,7 +551,7 @@ to testGetTree()
 		set theAlias to my getChoosenItem(theChoice, theFlattenPlaylists)
 		tell application "Finder"
 			activate
-			reveal theAlias
+			--reveal theAlias
 		end tell
 	end if
 	

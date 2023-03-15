@@ -165,12 +165,15 @@ to showProgress(current, total, strDescription, strAdditionalDescription)
 	end if
 end showProgress
 
-on showListReport(theList)
+on showListReport(theList, showIndex)
 	set i to 0
 	set theReport to ""
 	set theCount to count of theList
 	repeat with theItem in theList
 		my showProgress(i, theCount, "Getting report...", theItem)
+		if showIndex then
+			set theItem to i + 1 & " - " & theItem
+		end if
 		set theReport to theReport & theItem
 		if i < theCount - 1 then
 			set theReport to theReport & "

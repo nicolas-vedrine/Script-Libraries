@@ -291,6 +291,32 @@ on getStrList(theStr, theDelimiter) -- TODO
 	
 end getStrList
 
+on getZeroFormat(num, limit)
+	set theStrLimit to limit as string
+	set theStrNum to num as string
+	set theZero to ""
+	set theLoop to ((count of theStrLimit) - (count of theStrNum))
+	set theStart to 0
+	repeat while theStart < theLoop
+		set theZero to theZero & "0"
+		set theStart to theStart + 1
+	end repeat
+	return theZero & num
+end getZeroFormat
+
+on removeZeroFormat(theNum)
+	set i to 0
+	repeat count of theNum times
+		set theLetter to item (i + 1) of theNum
+		if theLetter is not "0" then
+			exit repeat
+		end if
+		set i to i + 1
+	end repeat
+	log i
+	return my removeChars(theNum, my _strFront_, i)
+end removeZeroFormat
+
 --c--   joinWords(theWordsList, theStart, theEnd)
 --d--   Join words of a list.
 --a--   theWordsList : list -- The list of words.
@@ -446,10 +472,19 @@ on loadScriptFromMe(theScriptName)
 end loadScriptFromMe
 
 on run
-	my testWebFriendly()
+	my testRemoveZeroFormat()
 end run
 
 -- test
+
+to testRemoveZeroFormat()
+	set theNum to my testGetZeroFormat()
+	return my removeZeroFormat(theNum)
+end testRemoveZeroFormat
+
+to testGetZeroFormat()
+	return my getZeroFormat(2, 9)
+end testGetZeroFormat
 
 to testWebFriendly()
 	return my webFriendly("Ceci est du texte   . Test de nouveau.")

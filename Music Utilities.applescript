@@ -267,7 +267,7 @@ to getGhostMediaFiles(theTracks, theFiles)
 								set theAll to findAll(theFiles, thePath)
 								if (count of theAll) > 1 then
 									tell script "UI Utilities"
-										--showListRreport(theAll)
+										--showListRreport(theAll, false)
 									end tell
 								else
 									set theFiles to deleteItem(theFiles, item 1 of theAll)
@@ -2163,9 +2163,10 @@ to setTrackLyrics(theArtist, theName, isFirstAttempt) -- TODO --> to check
 end setTrackLyrics
 
 
-to getTrackLyricsWithAPIHerokuApp(theArtist, theName)
+on getTrackLyricsWithAPIHerokuApp(theArtist, theName)
+	set theURL to my _APIHerokuAppURL_ & theArtist & "/" & theName
+	--display dialog theURL
 	tell application "JSON Helper"
-		set theURL to my _APIHerokuAppURL_ & theArtist & "/" & theName
 		try
 			set json to fetch JSON from theURL
 			set theLyrics to lyric of json
@@ -2535,9 +2536,10 @@ on run
 		end tell
 	*)
 	
-	--my testSetTrackLyricsWithAPIHerokuApp()
-	return my testGetGhostMediaFiles()
+	--return my testGetGhostMediaFiles()
 	--return my testCheckGhostMediaFilesFromTextFile()
+	
+	return my testSetTrackLyricsWithAPIHerokuApp()
 	
 end run
 
@@ -2590,7 +2592,7 @@ to testGetGhostMediaFiles()
 	end tell
 	
 	tell script "UI Utilities"
-		--showListReport(theFiles)
+		--showListReport(theFiles, false)
 	end tell
 	
 	(*
@@ -2666,7 +2668,7 @@ to testGetGhostMediaFiles()
 		
 		
 		tell script "UI Utilities"
-			--set theReport to showListReport(theList)
+			--set theReport to showListReport(theList, false)
 		end tell
 		
 		
@@ -2674,7 +2676,7 @@ to testGetGhostMediaFiles()
 		
 		if theChoices is not false then
 			tell script "UI Utilities"
-				set theReport to showListReport(theChoices)
+				set theReport to showListReport(theChoices, false)
 			end tell
 		end if
 		
@@ -2741,7 +2743,7 @@ to testCheckGhostMediaFilesFromTextFile()
 							
 							set theDebug to {theItem, theLocationPath}
 							tell script "UI Utilities"
-								--showListReport(theDebug)
+								--showListReport(theDebug, false)
 							end tell
 							
 							
@@ -2763,7 +2765,7 @@ to testCheckGhostMediaFilesFromTextFile()
 	end tell
 	
 	tell script "UI Utilities"
-		showListReport(thePresents)
+		showListReport(thePresents, false)
 	end tell
 	
 	return thePresents
