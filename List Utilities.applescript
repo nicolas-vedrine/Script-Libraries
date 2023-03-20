@@ -79,7 +79,7 @@ end getItemByLabel
 --a--   theLevel : integer -- The level incremented by the algorithm.
 --r--   list -- a list of records.
 --x--   flattenList({{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37057}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37057}, {name:"Acheté sur NailleucoPhone", theID:"E91BEB5B6EF9BCC2", isFolder:false, theClass:«class cUsP», isSmart:false, theCount:1}, {name:"=ALL MUSIC=", theID:"95D86D03EC2861F0", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"Smart", theID:"260C92610890EF91", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:181}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:843}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:778}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:35}}}}}}, null, 0) --> {{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:library playlist, isSmart:false, theCount:37057, theLabel:" Bibliothèque"}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:user playlist, isSmart:true, theCount:8, theLabel:" Clips vidéo"}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:user playlist, isSmart:true, theCount:37057, theLabel:" Musique"}, {name:"Acheté sur NailleucoPhone", theID:"E91BEB5B6EF9BCC2", isFolder:false, theClass:user playlist, isSmart:false, theCount:1, theLabel:" Acheté sur NailleucoPhone"}, {name:"=ALL MUSIC=", theID:"95D86D03EC2861F0", isFolder:true, theClass:folder playlist, isSmart:false, theCount:8385, children:{{name:"Smart", theID:"260C92610890EF91", isFolder:true, theClass:folder playlist, isSmart:false, theCount:8385, children:{{name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:user playlist, isSmart:true, theCount:181}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:user playlist, isSmart:true, theCount:843}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:user playlist, isSmart:true, theCount:778}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:user playlist, isSmart:true, theCount:35}}}}, theLabel:" =ALL MUSIC="}, {name:"Smart", theID:"260C92610890EF91", isFolder:true, theClass:folder playlist, isSmart:false, theCount:8385, children:{{name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:user playlist, isSmart:true, theCount:181}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:user playlist, isSmart:true, theCount:843}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:user playlist, isSmart:true, theCount:778}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:user playlist, isSmart:true, theCount:35}}, theLabel:"    Smart"}, {name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:user playlist, isSmart:true, theCount:181, theLabel:"       --All Music ++--"}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:user playlist, isSmart:true, theCount:843, theLabel:"       --Hard & Metal + Rock & Folk--"}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:user playlist, isSmart:true, theCount:778, theLabel:"       --Hard & Metal ++--"}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:user playlist, isSmart:true, theCount:35, theLabel:"       --Rap & Dance ++--"}}
-on flattenList(theList, theRecursiveList, theLevel)
+on flattenList(theList, theRecursiveList, theLevel, theCharsIndent)
 	if theRecursiveList is not null then
 		set theNewList to theRecursiveList
 	else
@@ -90,7 +90,7 @@ on flattenList(theList, theRecursiveList, theLevel)
 		set theItemName to name of theItem
 		set theIndent to ""
 		repeat theLevel times
-			set theIndent to theIndent & "   "
+			set theIndent to theIndent & theCharsIndent
 		end repeat
 		set theIndent to theIndent & " "
 		set theItemName to theIndent & theItemName
@@ -99,7 +99,7 @@ on flattenList(theList, theRecursiveList, theLevel)
 		set isFolder to isFolder of theItem
 		if isFolder then
 			set theChildren to children of theItem
-			my flattenList(theChildren, theNewList, theLevel + 1)
+			my flattenList(theChildren, theNewList, theLevel + 1, theCharsIndent)
 		end if
 	end repeat
 	return theNewList
@@ -113,7 +113,7 @@ end run
 
 to testFlattenList()
 	set theList to {{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37057}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37057}, {name:"Acheté sur NailleucoPhone", theID:"E91BEB5B6EF9BCC2", isFolder:false, theClass:«class cUsP», isSmart:false, theCount:1}, {name:"=ALL MUSIC=", theID:"95D86D03EC2861F0", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"Smart", theID:"260C92610890EF91", isFolder:true, theClass:«class cFoP», isSmart:false, theCount:8385, children:{{name:"--All Music ++--", theID:"973CB171739FAB9D", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:181}, {name:"--Hard & Metal + Rock & Folk--", theID:"3D99CE986F699F13", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:843}, {name:"--Hard & Metal ++--", theID:"49296220B7164B67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:778}, {name:"--Rap & Dance ++--", theID:"ECB5F697EB6FF887", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:35}}}}}}
-	set theFlattenPlaylists to flattenList(theList, null, 0)
+	set theFlattenPlaylists to flattenList(theList, null, 0, "   ")
 	return theFlattenPlaylists
 end testFlattenList
 

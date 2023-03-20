@@ -377,17 +377,15 @@ on getTree(theAlias, isRecursive, theLevel)
 	set isVisible to (visible of theInfos)
 	if isVisible then
 		if isFolder of theTreeItem then
-			--set theRootItemChildren to children of theTreeItem
-			--set theItems to get items of theAlias
-			--set theCount of theTreeItem to count of theItems
-			--set i to 0
 			if isRecursive is false then
 				if theLevel < 1 then
-					my parseTreeItem(theTreeItem, isRecursive, theLevel)
+					set theTreeItem to my parseTreeItem(theTreeItem, isRecursive, theLevel)
 				end if
 			else
-				my parseTreeItem(theTreeItem, isRecursive, theLevel)
+				set theTreeItem to my parseTreeItem(theTreeItem, isRecursive, theLevel)
 			end if
+			--display dialog "theCount of theTreeItem = " & theCount of theTreeItem
+			--display dialog "toto " & theCount of theTreeItem
 		end if
 	end if
 	return theTreeItem
@@ -396,10 +394,12 @@ end getTree
 on parseTreeItem(theTreeItem, isRecursive, theLevel)
 	set theRootItemChildren to children of theTreeItem
 	set theAlias to alias of theTreeItem
+	--display dialog "toto " & theCount of theTreeItem
 	tell application "Finder"
 		set theItems to get items of theAlias
 	end tell
-	set theCount of theTreeItem to count of theItems
+	--set theCount of theTreeItem to count of theItems
+	--display dialog "tata " & theCount of theTreeItem
 	set level of theTreeItem to theLevel
 	set i to 0
 	repeat with theItem in theItems
@@ -411,6 +411,7 @@ on parseTreeItem(theTreeItem, isRecursive, theLevel)
 		copy theChildItem to the end of theRootItemChildren
 		set i to i + 1
 	end repeat
+	return theTreeItem
 end parseTreeItem
 
 on getTreeItem(theAlias)
@@ -419,7 +420,10 @@ on getTreeItem(theAlias)
 	set isFolder to my isFolder(theAlias)
 	if isFolder then
 		set theChildren to {}
-		set theItem to {name:theName, size:theSize, alias:theAlias, isFolder:isFolder, level:0, children:theChildren, theCount:0}
+		tell application "Finder"
+			set theCount to count of (get items of theAlias)
+		end tell
+		set theItem to {name:theName, size:theSize, alias:theAlias, isFolder:isFolder, level:0, children:theChildren, theCount:theCount}
 	else
 		set theItem to {name:theName, size:theSize, alias:theAlias, isFolder:isFolder, level:0}
 	end if
@@ -427,7 +431,11 @@ end getTreeItem
 
 on showUITree(theFlattenList, thePrompt)
 	--log "showUIPlaylistsList = " & item 3 of theFlattenList
-	set theChoiceList to my getChoiceList(theFlattenList)
+	
+	tell script "List Lib"
+		--set theChoiceList to sortList(theChoiceList)
+		set theChoiceList to sortList(my getChoiceList(theFlattenList))
+	end tell
 	tell application "Finder"
 		set theChoice to choose from list theChoiceList with prompt thePrompt
 	end tell
@@ -435,38 +443,49 @@ on showUITree(theFlattenList, thePrompt)
 	return theChoice
 end showUITree
 
-to getChoiceList(theList)
+on getChoiceList(theList)
 	set theChoiceList to {}
+	set theTotal to count of theList
 	repeat with i from 1 to count of theList
 		set theItem to item i of theList
-		
-		if i = 3 then
-			--			log "getChoiceList = theItem : " & theItem as string
-		end if
-		set theLabel to theLabel of theItem
 		tell script "String Utilities"
-			set theIndex to getZeroFormat(i, count of theList)
+			set theIndex to getZeroFormat(i, theTotal)
 		end tell
-		if isFolder of theItem then
-			set theLabel to theIndex & " - " & theLabel & " /" & " (" & theCount of theItem & " files" & " - " & size of theItem & ")"
-		else
-			set theLabel to theIndex & " - " & theLabel & " (" & size of theItem & ")"
-		end if
-		if i = 3 then
-			log "getChoiceList = theLabel : " & theLabel as string
-		end if
+		set theLabel to theIndex & " - " & my getTreeItemLabel(theItem, my _labelFlattenList_)
 		set the end of theChoiceList to theLabel as string
 	end repeat
 	return theChoiceList
 end getChoiceList
 
-to getChoosenItem(theChoice, theFlattenItems)
+property _labelFlattenList_ : 1
+property _itemName_ : 2
+
+on getTreeItemLabel(theItem, theMode)
+	if theMode = _labelFlattenList_ then
+		set theLabel to theLabel of theItem
+	else
+		set theLabel to name of theItem
+	end if
+	set theLevel to (level of theItem) + 1
+	log "getTreeItemLabel"
+	if isFolder of theItem then
+		set theCountItems to (theCount of theItem)
+		if theCountItems > 1 then
+			set theFiles to "files"
+		else
+			set theFiles to "file"
+		end if
+		set theLabel to theLabel & " /" & " (" & theCountItems & " " & theFiles & " - " & size of theItem & " - level : " & theLevel & ")"
+	else
+		set theLabel to theLabel & " (" & size of theItem & " - level : " & theLevel & ")"
+	end if
+end getTreeItemLabel
+
+on getChoosenItem(theChoice, theFlattenItems)
 	tell script "String Utilities"
 		set selectedIndex to removeZeroFormat(word 1 of (item 1 of theChoice as string))
 	end tell
-	set theItem to item selectedIndex of theFlattenItems
-	set theAlias to theAlias of theItem
-	return theAlias
+	return item selectedIndex of theFlattenItems
 end getChoosenItem
 
 on isEmptyDirectory(thePath)
@@ -535,30 +554,54 @@ on loadScriptFromMe(theScriptName)
 end loadScriptFromMe
 
 on run
-	--return my testConvertByteSize()
-	my testGetTree()
+	my testGetTree(choose folder with prompt "Please choose a folder to parse :", true)
+	--my testFindFiles()
 end run
 
-to testGetTree()
-	set theTree to getTree(choose folder, true, 0)
+to testGetTree(theAlias, isRecursive)
+	set theTree to getTree(theAlias, isRecursive, 0)
 	set theChildren to children of theTree
 	tell script "List Utilities"
-		set theFlattenPlaylists to flattenList(theChildren, null, 0)
+		set theFlattenPlaylists to flattenList(theChildren, null, 0, "   ")
 	end tell
-	set theChoice to my showUITree(theFlattenPlaylists, "Choose an item :")
+	set theChoice to my showUITree(theFlattenPlaylists, "Choose an item for : " & my getTreeItemLabel(theTree, my _itemName_))
+	--set theChoice to my showUITree(theFlattenPlaylists, "Choose an item for : ")
 	
 	if theChoice is not false then
-		set theAlias to my getChoosenItem(theChoice, theFlattenPlaylists)
-		tell application "Finder"
-			activate
-			--reveal theAlias
-		end tell
+		set theItem to my getChoosenItem(theChoice, theFlattenPlaylists)
+		set theAlias to alias of theItem
+		if isRecursive then
+			tell application "Finder"
+				activate
+				reveal theAlias
+			end tell
+		else
+			if isFolder of theItem then
+				my testGetTree(theAlias, isRecursive)
+			else
+				tell application "Finder"
+					activate
+					reveal theAlias
+				end tell
+			end if
+		end if
 	end if
 	
 end testGetTree
 
 to testFindFiles()
-	set thePath to my convertAliasToPOSIXString(choose folder with prompt "Select the folder:")
+	--set thePath to my convertAliasToPOSIXString(choose folder with prompt "Select the folder:")
+	tell application "Finder"
+		set theAlias to get selection as alias
+		log "toto " & class of theAlias
+		set thePathAlias to theAlias as string
+		--display dialog (info for theAlias)
+		--return thePathAlias
+	end tell
+	--set theFile to file thePathAlias
+	--return
+	set thePath to my convertAliasToPOSIXString(theAlias)
+	return thePath
 	set theKeyword to ""
 	set theTypes to my _musicExtensions_
 	set theFiles to my findFiles(thePath, theKeyword, theTypes, false)

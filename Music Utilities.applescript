@@ -112,8 +112,9 @@ on loadScript(theFrom, theScriptName)
 		set thePath to path to library folder from user domain as string
 		set theScriptPath to thePath & "Scripts:" & theScriptName
 	end if
-	log theScriptPath
-	set theScript to (load script file theScriptPath)
+	log "loadScript : theScriptPath = " & theScriptPath
+	set theScriptAlias to theScriptPath as alias
+	set theScript to (load script theScriptAlias)
 	return theScript
 end loadScript
 
@@ -362,7 +363,7 @@ on getChoosenPlaylistFromTree()
 		--display dialog thePlaylistsTree
 		
 		tell script "List Utilities"
-			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0)
+			set theFlattenPlaylists to flattenList(thePlaylistsTree, null, 0, "   ")
 		end tell
 		
 		set theChoice to my showUIPlaylistsList(theFlattenPlaylists, "Choose a playlist :")
@@ -911,7 +912,7 @@ end getTrackNameProperties
 
 
 to normalizeTrackCase(theTrack) -- TODO
-	set strUtilities to (load script file "Macintosh HD:Library:Script Libraries:String Utilities.scpt")
+	--set theStrUtils to my loadScript(my _fromScriptLibrary_, my _stringUtilities_)
 	
 	set normalizePlaylist to item 1 of getPlaylistByName("À Normaliser")
 	set normalizedPlaylist to item 1 of getPlaylistByName("Normalisés")
@@ -920,27 +921,32 @@ to normalizeTrackCase(theTrack) -- TODO
 		set trackName to name of theTrack
 		set artistName to artist of theTrack
 		set albumName to album of theTrack
+	end tell
+	
+	tell script "String Utilities"
+		set newTrackName to changeCase of trackName to its _strLower_
+		set newArtistName to changeCase of artistName to its _strUpper_
+		set newAlbumName to changeCase of albumName to its _strCapitalize_
+	end tell
+	
+	tell application "Music"
+		set name of theTrack to newTrackName
+		set sort name of theTrack to newTrackName
 		
-		tell strUtilities
-			set newTrackName to changeCase of trackName to "lower"
-			set name of theTrack to newTrackName
-			set sort name of theTrack to newTrackName
-			
-			set newArtistName to changeCase of artistName to "upper"
-			set artist of theTrack to newArtistName
-			set sort artist of theTrack to newArtistName
-			set album artist of theTrack to newArtistName
-			set sort album artist of theTrack to newArtistName
-			
-			set newAlbumName to changeCase of albumName to "title"
-			set album of theTrack to newAlbumName
-			set sort album of theTrack to newAlbumName
-		end tell
+		set artist of theTrack to newArtistName
+		set sort artist of theTrack to newArtistName
+		set album artist of theTrack to newArtistName
+		set sort album artist of theTrack to newArtistName
+		
+		
+		set album of theTrack to newAlbumName
+		set sort album of theTrack to newAlbumName
 		
 		if comment of theTrack is not "combined" then
 			set comment of theTrack to ""
 		end if
 	end tell
+	
 	
 	my addTrackToPlaylist(theTrack, normalizedPlaylist)
 	(*
@@ -952,7 +958,7 @@ to normalizeTrackCase(theTrack) -- TODO
 	
 end normalizeTrackCase
 
-to normalizeTracksCase(theTracks, showMessage) -- TODO
+on normalizeTracksCase(theTracks, showMessage) -- TODO >» comment
 	tell application "Music"
 		set theList to {}
 		set i to 1
@@ -2390,7 +2396,7 @@ end checkIfDestinationHasEnoughSpace
 --x--   endProcess(154)
 to endProcess(countTracks)
 	tell application "Music"
-		display dialog "Process terminé pour " & countTracks & " tracks" buttons {"OK"} ¬
+		display dialog "Process terminé pour " & countTracks & " tracks." buttons {"OK"} ¬
 			default button 1 ¬
 			with icon 1
 	end tell
@@ -2481,7 +2487,7 @@ end getListReport
 --r--   string  -- The item choosen.
 --x--   showUIPlaylistsList({{name:"Bibliothèque", theID:"0000000000000005", isFolder:false, theClass:«class cLiP», isSmart:false, theCount:37060, theLabel:" Bibliothèque"}, {name:"Clips vidéo", theID:"07D5032B96891D67", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:8, theLabel:" Clips vidéo"}, {name:"Musique", theID:"CBDD9214A5BD0B6F", isFolder:false, theClass:«class cUsP», isSmart:true, theCount:37060, theLabel:" Musique"}}, "Please, select a playlist :") --> "2 -  Clips vidéo (8 tracks)"
 on showUIPlaylistsList(theFlattenList, thePrompt)
-	--log "showUIPlaylistsList = " & item 3 of theFlattenList
+	log "showUIPlaylistsList"
 	set theChoiceList to my getChoiceList(theFlattenList)
 	tell application "Music"
 		set theChoice to choose from list theChoiceList with prompt thePrompt
@@ -2539,11 +2545,16 @@ on run
 	--return my testGetGhostMediaFiles()
 	--return my testCheckGhostMediaFilesFromTextFile()
 	
-	return my testSetTrackLyricsWithAPIHerokuApp()
+	return my testNormalizeTracksCase()
 	
 end run
 
 ------- UNIT TESTS -------
+
+to testNormalizeTracksCase()
+	set theTracks to my getDialogTracksKind(true)
+	my normalizeTracksCase(theTracks, true)
+end testNormalizeTracksCase
 
 to testTagGhostMediaFiles()
 	set theChoices to my testGetGhostMediaFiles()
