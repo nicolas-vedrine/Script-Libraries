@@ -81,7 +81,7 @@ on getPromptList(theObjs, thePromptsList, theDefaultData)
 	
 end getPromptList
 
---c--   getUIItems(theItems)
+--c--   getUIItems(theItems, formatIndex)
 --d--   Get label items from a list of records.
 --a--   theItems : list -- List of records {theLabel, theData}. Also, label could be a list of multiple locale strings {fr_FR:"Courante", en_EN:"Current", en_US:"Current"}.
 --r--   list -- List of labels with indexes

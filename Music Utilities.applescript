@@ -87,7 +87,7 @@ use AppleScript version "2.4" -- Yosemite (10.10) or later
 use framework "Foundation"
 use scripting additions
 
-property _isDebug_ : true
+property _isDebug_ : false
 --property _searchString_ : "you're not my kind" -- TODO to test with that
 property _searchString_ : "at the"
 
@@ -701,10 +701,14 @@ end getAlbumTracks
 to searchForASimilarTrack(theTrack)
 	tell application "Music"
 		set theTrackFound to my searchTrack(theTrack, name of theTrack as string)
-		set theMessage to "Track found : " & my getFormattedTrackName(theTrackFound, my _formatedTrackNameTrackNameArtistNameAlbumName_)
-		tell script "UI Utilities"
-			showMessage(theMessage, "Music")
-		end tell
+		if theTrackFound is not false then
+			set theMessage to "Track found : " & my getFormattedTrackName(theTrackFound, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+			tell application "Music"
+				display dialog theMessage buttons {"OK", "Cancel"} ¬
+					default button "OK" cancel button ¬
+					"Cancel" with icon 1
+			end tell
+		end if
 		return theTrackFound
 	end tell
 end searchForASimilarTrack
@@ -726,7 +730,7 @@ to searchTrack(theTrack, theTrackName)
 		set listLength to count of theList
 		if (listLength is 0) then
 			set dialogResult to display dialog ¬
-				"No track found. Search manually ?" buttons {"Cancel", "OK"} ¬
+				"No track found for " & my getFormattedTrackName(theTrack, my _formatedTrackNameTrackNameArtistNameAlbumName_) & ". Search manually ?" buttons {"Cancel", "OK"} ¬
 				default button "OK" cancel button ¬
 				"Cancel" default answer (name of theTrack as string) ¬
 				with icon 1
@@ -735,7 +739,7 @@ to searchTrack(theTrack, theTrackName)
 			if (listLength > 1) then
 				set theChoice to my getChooseList(theList, false)
 				if theChoice is false then
-					set trackFound to null
+					set trackFound to false
 				else
 					set theIndex to word 1 of (item 1 of theChoice as string)
 					set trackFound to item theIndex of theList
@@ -841,7 +845,7 @@ to combineTracksProperties(theOriginalTrack, theTrackToCombine)
 	end tell
 end combineTracksProperties
 
---c--   deleteTrack(theTrack)
+--c--   deleteTrack(theTrack, deleteFile)
 --d--   Delete a track from the library and the file from the hard drive.
 --a--   theTrack : file track -- The track to delete.
 --a--   deleteFile : boolean -- true to delete the file from the hard drive
@@ -2542,10 +2546,10 @@ on run
 		end tell
 	*)
 	
-	--return my testGetGhostMediaFiles()
-	--return my testCheckGhostMediaFilesFromTextFile()
+	return my testFindDeadTracks()
+	--return my testSearchForASimilarTrack()
 	
-	return my testNormalizeTracksCase()
+	--return my testNormalizeTracksCase()
 	
 end run
 
@@ -2776,7 +2780,16 @@ to testCheckGhostMediaFilesFromTextFile()
 	end tell
 	
 	tell script "UI Utilities"
-		showListReport(thePresents, false)
+		if (count of thePresents) > 0 then
+			showListReport(thePresents, false)
+		else
+			display dialog "No present ghost track detected. "
+			set dialogResult to display dialog "\"" & theFolderName & "\" is a compilation ?" buttons {"No", "Yes"} ¬
+				default button "No" with icon 1
+			if button returned of dialogResult is "Yes" then
+				set isACompilation to true
+			end if
+		end if
 	end tell
 	
 	return thePresents
@@ -2914,7 +2927,7 @@ end testGetAlbumTracks
 to testFindDeadTracks()
 	set theTracks to my getSelectedTracks(false)
 	set theDeadTracks to my findDeadTracks(theTracks)
-	set theReport to my getListReport(theTracks, my _formatedTrackNameTrackNameArtistNameAlbumName_)
+	set theReport to my getListReport(theDeadTracks, my _formatedTrackNameTrackNameArtistNameAlbumName_)
 	tell application "Music"
 		set theUIReport to display dialog "Dead tracks :" default answer theReport ¬
 			buttons {"OK"} with icon 1
